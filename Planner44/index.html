@@ -22,7 +22,7 @@ header h1{font-weight:800;letter-spacing:-.01em;text-transform:uppercase;font-si
 main{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 320px;min-height:0}
 #stage{position:relative;min-height:0;touch-action:none;background:radial-gradient(ellipse at 50% 38%,var(--s1),var(--s2))}
 #stage canvas{display:block}
-#hint{position:absolute;left:12px;right:12px;top:12px;z-index:2;background:var(--panel);color:var(--muted);border:1px solid var(--line);border-radius:14px;padding:8px 14px;font-size:13px;line-height:1.35;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.08);text-align:center}
+#hint{position:absolute;left:12px;right:12px;bottom:12px;z-index:2;background:var(--panel);color:var(--muted);border:1px solid var(--line);border-radius:14px;padding:8px 14px;font-size:13px;line-height:1.35;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.08);text-align:center}
 aside{background:var(--panel);border-left:1px solid var(--line);overflow:auto;padding:16px;display:flex;flex-direction:column;gap:20px}
 section{display:flex;flex-direction:column;gap:10px}
 section[hidden]{display:none}
@@ -34,7 +34,6 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline
 .seg button{flex:1;border:0;background:transparent;min-height:40px;border-radius:9px}
 /* переключатель 3D/2D — в правом верхнем углу окна с планировкой */
 .vseg{position:absolute;top:12px;right:12px;z-index:3;background:var(--panel);border:1px solid var(--line);box-shadow:0 4px 14px rgba(0,0,0,.12)}.vseg button{min-height:34px;padding:0 14px;font-weight:700}
-#hint{right:120px}
 .seg button[aria-pressed="true"],.chip[aria-pressed="true"]{background:var(--accent);color:var(--on);border-color:var(--accent)}
 .tgl{display:flex;justify-content:space-between;align-items:center;text-align:left}.tgl .sh{display:none}
 .tgl::after{content:"";width:36px;height:20px;border-radius:10px;background:radial-gradient(circle at 10px 50%,#fff 7px,transparent 8px),var(--line)}
@@ -130,6 +129,14 @@ aside:not([data-tab="furn"]) #secF,aside:not([data-tab="part"]) #secP,aside:not(
 .swr .sw[aria-pressed="true"]{box-shadow:0 0 0 2px var(--panel),0 0 0 4px var(--accent)}
 .swr .sw.pick{position:relative;overflow:hidden;cursor:pointer;background:radial-gradient(circle,var(--pc,#fff) 0 7px,transparent 8px),conic-gradient(#e74c3c,#f1c40f,#2ecc71,#1abc9c,#3498db,#9b59b6,#e74c3c)}   /* «любой цвет»: радужный кружок, в центре — выбранный цвет */
 .swr .sw.pick input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:0;padding:0}
+.swr button.sw.pick{border:1px solid rgba(0,0,0,.18)}
+/* своя палитра для Android (системная там неудобная): квадрат «насыщенность × яркость» и полоса оттенка, открывается под рядом цветов */
+#cpk{grid-column:1/-1;display:grid;gap:12px;padding:12px 2px 6px}#cpk[hidden]{display:none}
+#cpSV,#cpH{position:relative;border-radius:10px;touch-action:none;cursor:crosshair}
+#cpSV{height:110px;background:linear-gradient(to top,#000,transparent),linear-gradient(to right,#fff,hsl(var(--h,0),100%,50%))}
+#cpH{height:22px;background:linear-gradient(to right,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00)}
+#cpSV i,#cpH i{position:absolute;width:20px;height:20px;margin:-10px 0 0 -10px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.4),0 1px 4px rgba(0,0,0,.4);pointer-events:none;background:var(--pc,transparent)}
+#cpH i{top:50%}
 .swr .sw.reset{background:linear-gradient(to top right,transparent 45%,#c0392b 46%,#c0392b 54%,transparent 55%),#fff}   /* «как было»: перечёркнутый кружок */
 .shot{position:fixed;inset:0;z-index:10;background:rgba(10,14,20,.7);display:flex;align-items:center;justify-content:center;padding:16px}
 .shot[hidden]{display:none}
@@ -155,7 +162,7 @@ input[type=range]{width:100%;accent-color:var(--accent);margin:6px 0 0;min-heigh
   /* строка 1: ползунки высоты и прозрачности стен, строка 2: «Названия» и «Двери» (подписи короткие), ниже готовые расстановки */
   #secV>:nth-child(2){grid-column:1;grid-row:2}#secV>:nth-child(3){grid-column:2;grid-row:2}
   #secV>#tl{grid-column:1;grid-row:3}#secV>#td{grid-column:2;grid-row:3}#secV .tgl .lf{display:none}#secV .tgl .sh{display:inline}
-  .vseg{top:8px;right:8px}.vseg button{min-height:32px;padding:0 12px}#hint{right:104px}
+  .vseg{top:8px;right:8px}.vseg button{min-height:32px;padding:0 12px}
   #secV .ph{grid-column:1/-1;grid-row:4;margin:4px 0 0}#secV .presets{grid-column:1/-1;grid-row:5}.pre .lf{display:none}.pre .sh{display:inline}.ph small{display:none}.presets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.pre{padding:7px 8px}.pre small{display:none}.pre b{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #secV>h2:first-child{display:none}   /* на телефоне заголовок «Настройки» дублирует название вкладки */
   .cards{display:flex;overflow-x:auto;gap:8px;padding-bottom:2px}
@@ -186,11 +193,12 @@ input[type=range]{width:100%;accent-color:var(--accent);margin:6px 0 0;min-heigh
   #selS.wsel>.selh+div{grid-column:1/-1;grid-row:2}#selS.wsel #rowD{grid-column:1/-1;grid-row:3}#selS.wsel #rowP{grid-row:4}#selS.wsel .icons{grid-row:5}
   .icons button{flex:1 1 0;max-width:84px;width:auto;min-height:52px;padding:7px 2px 5px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:3px}   /* значок и подпись под ним */
   .icons .bl{display:block;font-size:10.5px;line-height:1.15;text-align:center;font-weight:500}
-  #rowP{grid-column:1/-1}#rowH{grid-column:1;grid-row:4}#rowA{grid-column:2/-1;grid-row:4}#rowC{grid-column:1/-1;grid-row:5}
+  #rowP{grid-column:1/-1}#rowH{grid-column:1;grid-row:4}#rowA{grid-column:2/-1;grid-row:4}#rowC{grid-column:1/-1;grid-row:5}#cpk{grid-row:6}
+  #selS.picking>div:not(#rowC):not(#cpk):not(.selh),#selS.picking .icons{display:none!important}#selS.picking #rowC{grid-row:2}#selS.picking #cpk{grid-row:3}   /* пока открыта своя палитра, ползунки и кнопки прячутся, чтобы она поместилась */
   .swr .sw{flex-basis:30px;width:30px;height:30px}
   #selS label{font-size:12px}
   #selS input[type=range]{min-height:24px;margin:0}
-  #hint{top:8px;font-size:12px}
+  #hint{bottom:8px;font-size:12px}
 }
 @media (min-width:761px) and (max-height:520px){
   main{grid-template-columns:minmax(0,1fr) 250px}aside{padding:10px;gap:12px}.cards{grid-template-columns:1fr}header{padding:6px 14px}
@@ -215,6 +223,7 @@ input[type=range]{width:100%;accent-color:var(--accent);margin:6px 0 0;min-heigh
       <div id="rowH"><label>Высота <b id="vH2"></b></label><input id="sH" type="range" step="10"></div>
       <div id="rowA"><label>Поворот <b id="vA"></b></label><input id="sA" type="range" min="0" max="355" step="5"></div>
       <div id="rowC" class="swr" aria-label="Цвет"></div>
+      <div id="cpk" hidden><div id="cpSV" aria-label="Насыщенность и яркость"><i></i></div><div id="cpH" aria-label="Оттенок"><i></i></div></div>
     </section></div>
   <aside data-tab="furn">
     <nav class="seg tabs"><button data-t="furn" aria-pressed="true">Мебель</button><button data-t="part" aria-pressed="false">Ремонт</button><button data-t="view" aria-pressed="false">Настройки</button></nav>
@@ -559,6 +568,7 @@ let anim=null;
 // iOS присылает «изменено» и «потерян фокус» прямо во время выбора, поэтому закрытие палитры не ловим: вид остаётся сдвинутым,
 // плавно возвращается по «Готово» или при выборе другого предмета, а если человек сам начал крутить вид — просто остаётся как есть.
 // Сдвиг только по горизонтали (по полу), наклон и масштаб не меняются
+const OWN_PICK=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(/Macintosh/.test(navigator.userAgent)&&navigator.maxTouchPoints>1);   // на Android и iPhone/iPad своя палитра вместо системной (iPad выдаёт себя за Mac, отличаем по сенсорному экрану)
 const FOCUS_Y=0.68,FOCUS_MS=350,FOCUS_ITER=4;let focusSaved=null;
 function panTo(cam,ctl,p1,t1){const p0=cam.position.clone(),t0=ctl.target.clone(),s0=performance.now();
   anim=now=>{const k=Math.min(1,(now-s0)/FOCUS_MS),e=k*k*(3-2*k);cam.position.lerpVectors(p0,p1,e);ctl.target.lerpVectors(t0,t1,e);return k<1}}
@@ -765,7 +775,13 @@ const items=[],GRID=[];
 for(let x=0;x<=15500;x+=150)for(let y=100;y<=9800;y+=150)GRID.push([x,y]);
 let sel=null,drag=null,down=null,tmr=0,leafTap=null;
 const ray=new T.Raycaster(),ndc=new T.Vector2(),hintEl=$('hint');
-function say(s){hintEl.textContent=s;hintEl.style.display='block';clearTimeout(tmr);tmr=setTimeout(()=>hintEl.style.display='none',3500)}
+// подсказки внизу окна: если там открыта панель предмета (ПК) или карточка «Как смотреть квартиру», подсказка встаёт над ними
+const HINT_GAP=10;
+function placeHint(){if(hintEl.style.display!=='block')return;let b=null;
+  [['selS',el=>el.classList.contains('open')],['nav',el=>!el.hidden]].forEach(([id,on])=>{const el=$(id);if(!el||el.parentNode!==$('stage')||!on(el))return;
+    const v=parseFloat(getComputedStyle(el).bottom)+el.offsetHeight+HINT_GAP;if(b===null||v>b)b=v});
+  hintEl.style.bottom=b===null?'':b+'px'}
+function say(s){hintEl.textContent=s;hintEl.style.display='block';placeHint();clearTimeout(tmr);tmr=setTimeout(()=>hintEl.style.display='none',3500)}
 const ac=()=>cur===ocam?oc:controls;
 const rect=(it,x,y)=>{if(it.fa){const P=poly(it,x,y),X=P.map(p=>p[0]),Y=P.map(p=>p[1]);return[Math.min(...X),Math.min(...Y),Math.max(...X),Math.max(...Y)]}   // у наклонного — описанный прямоугольник
   const o=it.rot&1,hw=(o?it.d:it.w)/2,hd=(o?it.w:it.d)/2;return[x-hw,y-hd,x+hw,y+hd]};
@@ -807,9 +823,26 @@ function findSpot(it,px,py,maxR=1e9){
   return null;
 }
 const put=(it,x,y)=>{it.x=x;it.y=y;it.g.position.set(x*M,0,-y*M)};
-function paint(it,bad){it.mats.forEach(m=>m.emissive&&m.emissive.setHex(bad?0xb02a2a:(it===sel?0x2a3a0c:0)))}
+function paint(it,bad){it.mats.forEach(m=>m.emissive&&m.emissive.setHex(bad?0xb02a2a:0))}   // красным — только когда мешает стена или мебель; выбор показывает рамка selFrame, цвет предмета не меняется
+// выделение выбранного предмета: яркая рамка на полу вокруг него (видна сквозь мебель и в 2D) и тонкий контур габаритов
+const SEL_COL=0xe3474d,SEL_PAD=40,SEL_LINE=40,SEL_BREATH_MS=1400,SEL_OP=[0.12,1],SEL_EOP=[0.35,1],   // рамка «дышит»: прозрачность плавно ходит между SEL_OP за SEL_BREATH_MS
+  selG=new T.Group();scene.add(selG);selG.visible=false;let selKey='';
+const selRib=new T.MeshBasicMaterial({color:SEL_COL,depthTest:false,transparent:true,opacity:0.95}),selEdge=new T.LineBasicMaterial({color:SEL_COL,transparent:true,opacity:0.8});
+function frameGeo(W,D){ // плоская рамка шириной SEL_LINE вокруг прямоугольника W x D (мм)
+  const a=(W/2+SEL_LINE)*M,b=(D/2+SEL_LINE)*M,c=W/2*M,d=D/2*M,o=new T.Shape(),i=new T.Path();
+  o.moveTo(-a,-b);o.lineTo(a,-b);o.lineTo(a,b);o.lineTo(-a,b);o.lineTo(-a,-b);
+  i.moveTo(-c,-d);i.lineTo(-c,d);i.lineTo(c,d);i.lineTo(c,-d);i.lineTo(-c,-d);o.holes.push(i);return new T.ShapeGeometry(o)}
+const CALM=matchMedia('(prefers-reduced-motion:reduce)');   // кто отключил анимации в системе, тому рамка не мигает
+function selFrame(now){const it=sel;if(!it||!items.includes(it)){selG.visible=false;return}
+  const k=now==null||CALM.matches?1:0.5+0.5*Math.cos(now/SEL_BREATH_MS*2*Math.PI);selRib.opacity=SEL_OP[0]+(SEL_OP[1]-SEL_OP[0])*k;selEdge.opacity=SEL_EOP[0]+(SEL_EOP[1]-SEL_EOP[0])*k;   // контур габаритов дышит вместе с рамкой
+  const h=Math.min(it.h||H,H),key=[it.c.id,it.w,it.d,h].join();
+  if(key!==selKey){selKey=key;selG.traverse(o=>o.geometry&&o.geometry.dispose());selG.clear();const W=it.w+2*SEL_PAD,D=it.d+2*SEL_PAD,y=4*M;
+    const rib=new T.Mesh(it.c.round?new T.RingGeometry(W/2*M,(W/2+SEL_LINE)*M,64):frameGeo(W,D),selRib);   // круглому столу — кольцо, остальным — прямоугольная рамка
+    rib.rotation.x=-Math.PI/2;rib.position.y=y;rib.renderOrder=10;selG.add(rib);
+    if(!it.c.wall){const e=new T.LineSegments(new T.EdgesGeometry(new T.BoxGeometry(it.w*M,h*M,it.d*M)),selEdge);e.position.y=h/2*M;selG.add(e)}}
+  selG.visible=true;selG.position.set(it.g.position.x,0,it.g.position.z);selG.rotation.y=it.g.rotation.y}
 function syncPanel(){
-  const it=sel;$('selS').classList.toggle('open',!!it);if(!it)return;const c=it.c,dr=!!it.dr,pw=c.wall&&!dr||!!c.round;   // у перегородки с проёмом: длина, ширина проёма и его положение
+  const it=sel;$('selS').classList.toggle('open',!!it);placeHint();if(!it)return;const c=it.c,dr=!!it.dr,pw=c.wall&&!dr||!!c.round;   // у перегородки с проёмом: длина, ширина проёма и его положение
   $('selS').classList.toggle('wsel',!!c.wall);$('selName').textContent=dr?'Перегородка с проёмом':c.name;$('rowC').style.display=c.wall?'none':'';if(!c.wall)renderTints();$('bDoor').hidden=!dr;$('bOpen').hidden=$('bFlip').hidden=!dr;$('bAddD').hidden=!c.wall||dr;if(dr){const o=!!(doorsOn&&it.dSt&&it.dSt.open),t=o?'Закрыть дверь':'Открыть дверь';$('bOpen').title=t;$('bOpenL').textContent=t;$('bOpen').setAttribute('aria-label',t);$('bOpen').setAttribute('aria-pressed',o)}$('lW').textContent=c.wall?'Длина':c.round?'Диаметр':'Ширина';$('lD').textContent=dr?'Проём':'Глубина';$('rowD').style.display=pw?'none':'';$('rowP').style.display=dr?'':'none';$('rowA').style.display=c.wall||c.round?'none':'';const hasH=!c.wall&&!!c.hr;$('rowH').style.display=hasH?'':'none';$('rowH').style.gridColumn=$('rowA').style.display==='none'?'1/-1':'';$('rowA').style.gridColumn=hasH?'':'1/-1';
   if(hasH){const o=c.hOff||0,sh=$('sH');sh.min=c.hr[0];sh.max=c.hr[1];sh.value=it.h-o;$('vH2').textContent=Math.round(it.h-o)/10+' см'}if(!c.wall){$('sA').value=angOf(it);$('vA').textContent=angOf(it)+'°'}$('sW').parentNode.style.gridColumn=pw?'1/3':'';
   [['W','w',0],['D','d',1]].forEach(([K,k,i])=>{const s=$('s'+K);s.min=c.min[i];s.max=c.max[i];s.step=c.wall?10:50;s.value=it[k];$('v'+K).textContent=Math.round(it[k])/10+' см'});
@@ -817,7 +850,7 @@ function syncPanel(){
     sd.min=DOOR_MIN;sd.max=Math.min(DOOR_MAX,it.w-2*jb(it));sd.step=10;sd.value=dw;$('vD').textContent=dw/10+' см';
     sp.min=-m;sp.max=m;sp.step=10;sp.value=o;$('vP').textContent=(o>0?'+':'')+Math.round(o)/10+' см'}
 }
-function select(it){if(focusSaved&&it!==sel)focusSel(false);sel=it;items.forEach(i=>paint(i,false));syncPanel()}
+function select(it){if(it!==sel)closePick();if(focusSaved&&it!==sel)focusSel(false);sel=it;items.forEach(i=>paint(i,false));syncPanel()}
 // на телефоне панель выбранного предмета живёт в нижнем меню и закрывает его, пока предмет выбран; на ПК — поверх окна 3D
 const PHONE=matchMedia('(max-width:760px)');
 function placeSel(){const p=PHONE.matches?document.querySelector('aside'):stage;if($('selS').parentNode!==p)p.appendChild($('selS'))}
@@ -1303,7 +1336,8 @@ function applyTint(it){
     c.needsUpdate=true})}
 function renderTints(){const it=sel,cust=!!it&&it.tint!=null&&!TINTS.some(t=>t[1]===it.tint),hex=c=>'#'+c.toString(16).padStart(6,'0');
   $('rowC').innerHTML=`<button class="sw reset" data-c="" title="Как было" aria-label="Как было" aria-pressed="${!!it&&it.tint==null}"></button>`+
-  `<label class="sw pick" title="Любой цвет" aria-pressed="${cust}"${cust?` style="--pc:${hex(it.tint)}"`:''}><input type="color" aria-label="Любой цвет" value="${cust?hex(it.tint):'#7f958f'}"></label>`+
+  (OWN_PICK?`<button class="sw pick" title="Любой цвет" aria-label="Любой цвет" aria-pressed="${cust}"${cust?` style="--pc:${hex(it.tint)}"`:''}></button>`
+   :`<label class="sw pick" title="Любой цвет" aria-pressed="${cust}"${cust?` style="--pc:${hex(it.tint)}"`:''}><input type="color" aria-label="Любой цвет" value="${cust?hex(it.tint):'#7f958f'}"></label>`)+
   TINTS.map(([n,c])=>`<button class="sw" data-c="${c}" title="${n}" aria-label="${n}" aria-pressed="${!!it&&it.tint===c}" style="background:${hex(c)}"></button>`).join('')}
 // точка на полу в центре экрана: сюда (или в ближайшее свободное место) ставится новая мебель
 function viewPoint(){
@@ -1360,6 +1394,12 @@ function snapPart(it,x,y){
   let bd=null,bl=null;                                             // лучший сдвиг вдоль длины и поперёк
   const setD=d=>{if(bd===null||Math.abs(d)<Math.abs(bd))bd=d},setL=l=>{if(bl===null||Math.abs(l)<Math.abs(bl))bl=l};
   for(const {q,qv,w,ext} of cand){
+    if(qv===v&&!w){                                                   // параллельная перегородка на одной линии: концы стыкуются вплотную
+      if(Math.abs(r[B0]-q[B0])>1||Math.abs(r[B1]-q[B1])>1)continue;
+      const g1=q[A0]-r[A1],g2=r[A0]-q[A1];
+      if(g1>=-1&&g1<=S&&Math.abs(g1)>0.01)setD(g1);
+      if(g2>=-1&&g2<=S&&Math.abs(g2)>0.01)setD(-g2);
+      continue}
     if(qv===v){                                                       // параллельная: только встроенные стены
       if(!w||r[A0]>=q[A1]||r[A1]<=q[A0])continue;                    // должны перекрываться по длине
       const g1=q[B0]-r[B1],g2=r[B0]-q[B1];
@@ -1462,11 +1502,28 @@ function resizeCore(k,v){
 let slS0=null;['sW','sD','sP'].forEach(id=>{$(id).addEventListener('input',()=>{if(!slS0)slS0=snap()},true);$(id).addEventListener('change',()=>{if(slS0&&!sameSnap(slS0,snap()))pushHist('изменение размера',slS0);slS0=null})});
 $('sW').oninput=e=>resizeSel('w',+e.target.value);$('sD').oninput=e=>{const v=+e.target.value;if(sel&&sel.dr){sel.dw=Math.max(DOOR_MIN,Math.min(v,DOOR_MAX,sel.w-2*jb(sel)));build(sel);syncPanel();return}resizeSel('d',v)};
 // «любой цвет»: системная палитра; пока её крутят, цвет меняется сразу, в историю попадает один раз, когда выбор закончен
-$('rowC').addEventListener('pointerdown',e=>{if(e.target.type==='color'&&PHONE.matches)focusSel(true)});
 let cS0=null;$('rowC').addEventListener('input',e=>{if(e.target.type!=='color'||!sel)return;if(!cS0)cS0=snap();sel.tint=parseInt(e.target.value.slice(1),16);applyTint(sel);
   const l=e.target.parentNode;l.style.setProperty('--pc',e.target.value);$('rowC').querySelectorAll('.sw').forEach(b=>b.setAttribute('aria-pressed',b===l))});
 $('rowC').addEventListener('change',e=>{if(e.target.type!=='color')return;if(cS0&&!sameSnap(cS0,snap()))pushHist('цвет',cS0);cS0=null});
-$('rowC').onclick=e=>{const b=e.target.closest('.sw');if(!b||!sel||b.classList.contains('pick'))return;pushHist('цвет');sel.tint=b.dataset.c===''?null:+b.dataset.c;applyTint(sel);renderTints()};
+$('rowC').onclick=e=>{const b=e.target.closest('.sw');if(!b||!sel)return;if(b.classList.contains('pick')){if(OWN_PICK)togglePick();return}closePick();pushHist('цвет');sel.tint=b.dataset.c===''?null:+b.dataset.c;applyTint(sel);renderTints()};
+// своя палитра (Android и iOS): оттенок cpHue 0..360, насыщенность и яркость 0..1; цвет меняется сразу, в историю — один раз при закрытии
+let cpHue=0,cpS=0,cpV=0,cpS0=null;
+function hsv2hex(h,s,v){const f=n=>{const k=(n+h/60)%6;return Math.round(255*(v-v*s*Math.max(0,Math.min(k,4-k,1))))};return(f(5)<<16)|(f(3)<<8)|f(1)}
+function hex2hsv(c){const r=(c>>16&255)/255,g=(c>>8&255)/255,b=(c&255)/255,mx=Math.max(r,g,b),d=mx-Math.min(r,g,b);
+  let h=0;if(d)h=mx===r?((g-b)/d+6)%6:mx===g?(b-r)/d+2:(r-g)/d+4;return[h*60,mx?d/mx:0,mx]}
+function drawPick(){const c=hsv2hex(cpHue,cpS,cpV),hx='#'+c.toString(16).padStart(6,'0');
+  $('cpSV').style.setProperty('--h',cpHue);const k=$('cpSV').firstChild;k.style.left=cpS*100+'%';k.style.top=(1-cpV)*100+'%';k.style.setProperty('--pc',hx);
+  const q=$('cpH').firstChild;q.style.left=cpHue/360*100+'%';q.style.setProperty('--pc','hsl('+cpHue+',100%,50%)');return[c,hx]}
+function applyPick(){if(!sel)return;const [c,hx]=drawPick();sel.tint=c;applyTint(sel);
+  const b=$('rowC').querySelector('.pick');if(b)b.style.setProperty('--pc',hx);$('rowC').querySelectorAll('.sw').forEach(x=>x.setAttribute('aria-pressed',x===b))}
+function openPick(){if(!sel)return;cpS0=snap();[cpHue,cpS,cpV]=hex2hsv(sel.tint!=null?sel.tint:0x7f958f);$('cpk').hidden=false;$('selS').classList.add('picking');drawPick()}
+function closePick(){if($('cpk').hidden)return;$('cpk').hidden=true;$('selS').classList.remove('picking');if(cpS0&&!sameSnap(cpS0,snap()))pushHist('цвет',cpS0);cpS0=null;if(sel)renderTints()}
+function togglePick(){$('cpk').hidden?openPick():closePick()}
+[['cpSV',(e,r)=>{cpS=Math.min(1,Math.max(0,(e.clientX-r.left)/r.width));cpV=1-Math.min(1,Math.max(0,(e.clientY-r.top)/r.height))}],
+ ['cpH',(e,r)=>{cpHue=Math.min(359.9,Math.max(0,(e.clientX-r.left)/r.width*360));if(cpS<0.05&&cpV>0.95){cpS=1;cpV=1}}]].forEach(([id,f])=>{   // с белого цвета полоса оттенка сразу даёт яркий цвет
+  const el=$(id),mv=e=>{f(e,el.getBoundingClientRect());applyPick()};
+  el.addEventListener('pointerdown',e=>{e.stopPropagation();el.setPointerCapture(e.pointerId);mv(e)});
+  el.addEventListener('pointermove',e=>{if(el.hasPointerCapture(e.pointerId))mv(e)})});
 // высота корпуса (столы, шкафы, тумбы): на плане ничего не меняется, перестраивается только вид; у стола с монитором и ТВ-тумб надстройка hOff едет вместе со столешницей
 let hS0=null;$('sH').addEventListener('input',()=>{if(!hS0)hS0=snap()},true);$('sH').addEventListener('change',()=>{if(hS0&&!sameSnap(hS0,snap()))pushHist('высота',hS0);hS0=null});
 $('sH').oninput=e=>{if(!sel||!sel.c.hr)return;sel.h=+e.target.value+(sel.c.hOff||0);build(sel);$('vH2').textContent=Math.round(+e.target.value)/10+' см'};
@@ -1606,13 +1663,15 @@ stage.addEventListener('pointerdown',e=>{
 function startDrag(it,h,id){ // предмет едет за пальцем или мышью по горизонтальной плоскости на высоте точки касания
   const pl=new T.Plane(new T.Vector3(0,1,0),-h.point.y),p=new T.Vector3();
   if(!ray.ray.intersectPlane(pl,p))return;
-  drag={it,pl,id,ox:it.x-p.x/M,oy:it.y+p.z/M,lx:it.x,ly:it.y,ctl:ac(),s0:snap()};
+  drag={it,pl,id,ox:it.x-p.x/M,oy:it.y+p.z/M,lx:it.x,ly:it.y,ctl:ac(),s0:snap(),moved:false,sx:null,sy:null};
   drag.ctl.enabled=false; // пока двигаем мебель, камера не вращается
 }
+const DRAG_SLOP=6;   // пока палец или мышь сдвинулись меньше чем на DRAG_SLOP пикселей, предмет стоит: простое нажатие ничего не сдвигает
 const SEL_HOLD_MS=500,SEL_SLOP=8;   // удержание пальца на предмете полсекунды выбирает его; сдвиг больше SEL_SLOP пикселей — это вращение вида
 addEventListener('pointermove',e=>{if(tap&&tap.tm&&e.pointerId===tap.id&&Math.hypot(e.clientX-tap.x,e.clientY-tap.y)>SEL_SLOP){clearTimeout(tap.tm);tap.tm=0}});
 addEventListener('pointermove',e=>{
   if(!drag||e.pointerId!==drag.id)return;
+  if(!drag.moved){if(drag.sx===null){drag.sx=e.clientX;drag.sy=e.clientY;return}if(Math.hypot(e.clientX-drag.sx,e.clientY-drag.sy)<DRAG_SLOP)return;drag.moved=true}
   setNdc(e);const p=new T.Vector3();if(!ray.ray.intersectPlane(drag.pl,p))return;
   const it=drag.it,nx=p.x/M+drag.ox,ny=-p.z/M+drag.oy,px=drag.lx,py=drag.ly;
   const mag=(x,y)=>magnet(it,x,y);
@@ -1626,7 +1685,7 @@ addEventListener('pointermove',e=>{
 });
 const endPtr=e=>{
   touches.delete(e.pointerId);
-  if(drag&&e.pointerId===drag.id){const di=drag.it,s0=drag.s0;drag.ctl.enabled=true;drag=null;if(di.c.wall){di.anc=0;closeGaps(di);build(di);syncPanel()}paint(di,false);if(!sameSnap(s0,snap()))pushHist('перемещение',s0);return}
+  if(drag&&e.pointerId===drag.id){const di=drag.it,s0=drag.s0;drag.ctl.enabled=true;const mv=drag.moved;drag=null;if(di.c.wall&&mv){di.anc=0;closeGaps(di);build(di);syncPanel()}paint(di,false);if(!sameSnap(s0,snap()))pushHist('перемещение',s0);return}
   if(pt&&e.type==='pointerup'&&touches.size===0&&Math.hypot(e.clientX-pt.x,e.clientY-pt.y)<8&&placeMode)placeAt(e);
   pt=null;
   if(leafTap&&e.type==='pointerup'&&touches.size===0&&Math.hypot(e.clientX-leafTap.x,e.clientY-leafTap.y)<8)toggleDoor(leafTap.st);
@@ -1640,7 +1699,7 @@ addEventListener('pointerup',endPtr);addEventListener('pointercancel',endPtr);
 addEventListener('keydown',e=>{if(!sel||e.target.tagName==='INPUT')return;if('rRкК'.includes(e.key)&&e.key.length===1)rotateSel();if('qQйЙeEуУ'.includes(e.key)&&e.key.length===1&&sel&&!sel.c.wall){const s0=snap();if(setAngle(angOf(sel)+('qQйЙ'.includes(e.key)?-ANG_KEY:ANG_KEY)))pushHist('поворот',s0)}if(e.key==='Delete'||e.key==='Backspace')removeSel()});
 // снимок: рисуем текущий кадр (без подсветки выбора) с подписью внизу
 function snapshot(){
-  const s0=sel;sel=null;items.forEach(i=>paint(i,false));
+  const s0=sel;sel=null;items.forEach(i=>paint(i,false));selFrame();
   renderer.render(scene,cur);
   const src=renderer.domElement,w=src.width,h=src.height,bar=Math.round(h*0.08),c=document.createElement('canvas');
   c.width=w;c.height=h+bar;const g=c.getContext('2d');
@@ -1650,7 +1709,7 @@ function snapshot(){
   g.fillStyle='#c1272d';g.font='800 '+Math.round(bar*.42)+'px Montserrat,"Segoe UI",system-ui,sans-serif';g.textAlign='left';g.fillText('Планировщик мечты',bar*.4,h+bar/2);
   g.fillStyle='#66727f';g.font=Math.round(bar*.34)+'px "Segoe UI",system-ui,sans-serif';g.textAlign='right';
   g.fillText('4К · кв. №64 · '+new Date().toLocaleDateString('ru-RU'),w-bar*.4,h+bar/2);
-  sel=s0;items.forEach(i=>paint(i,false));
+  sel=s0;items.forEach(i=>paint(i,false));selFrame();
   return c.toDataURL('image/png');
 }
 $('snap').onclick=()=>{const u=snapshot(),a=$('shotDl');$('shotImg').src=u;a.href=u;a.download='planirovka-'+new Date().toISOString().slice(0,10)+'.png';$('shot').hidden=false};
@@ -1692,7 +1751,7 @@ function closeHelp(){$('helpM').hidden=true}
 // при открытии: карточка «Как смотреть квартиру» с тремя анимированными жестами (те же картинки, что в шпаргалке)
 const NAV_MS=15000,NAV_TXT=TOUCH?['ведите одним пальцем','сведите или разведите два пальца','ведите двумя пальцами']:['зажмите левую кнопку мыши и ведите','крутите колёсико мыши','зажмите правую кнопку мыши и ведите'];
 $('nav').innerHTML=`<div class="navh"><b>Как смотреть квартиру</b><button id="navX">Понятно</button></div><div class="navt">${HELP.slice(0,3).map((h,i)=>`<div class="tip"><svg viewBox="0 0 96 64" aria-hidden="true">${h[3]}</svg><b>${h[0]}</b><span>${NAV_TXT[i]}</span></div>`).join('')}</div>`;
-function hideNav(){$('nav').hidden=true}
+function hideNav(){$('nav').hidden=true;placeHint()}
 $('nav').hidden=false;hintEl.style.display='none';$('navX').onclick=hideNav;setTimeout(hideNav,NAV_MS);
 stage.addEventListener('pointerdown',e=>{if(!e.target.closest('#nav'))hideNav();focusSaved=null});stage.addEventListener('wheel',hideNav,{passive:true});
 // при открытии сайта шпаргалка сама не открывается: вместо неё под кнопкой «?» на HINTQ_MS висит выноска, кнопка пульсирует
@@ -1709,5 +1768,5 @@ $('undo').onclick=undo;
 addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&(e.key==='z'||e.key==='я'||e.code==='KeyZ')&&e.target.tagName!=='INPUT'){e.preventDefault();undo();return}if(e.key==='Escape'){$('shot').hidden=true;closeHelp();if(doorMode)setDoorMode(false);if(placeMode)setPlace(null)}});
 const LO=new T.Vector3(-1,0,-10.6),HI=new T.Vector3(16.5,1,0.6),dl=new T.Vector3();
 function keepIn(ctl,cam){if(focusSaved)return;dl.copy(ctl.target).clamp(LO,HI).sub(ctl.target);if(dl.lengthSq()>0){ctl.target.add(dl);cam.position.add(dl)}} // не даём утащить квартиру за пределы экрана
-(function loop(now){requestAnimationFrame(loop);if(anim&&!anim(now))anim=null;stepDoors(now);const ct=cur===ocam?oc:controls;ct.update();keepIn(ct,cur);renderer.render(scene,cur)})(performance.now());
+(function loop(now){requestAnimationFrame(loop);if(anim&&!anim(now))anim=null;stepDoors(now);selFrame(now);const ct=cur===ocam?oc:controls;ct.update();keepIn(ct,cur);renderer.render(scene,cur)})(performance.now());
 </script></body></html>
