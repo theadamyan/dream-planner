@@ -1,0 +1,1713 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Планировщик мечты — 3D-план квартиры</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f1f2f4;--panel:#fff;--text:#1d1d21;--muted:#6b6e76;--accent:#c1272d;--on:#fff;--line:#e3e4e8;--card:#f5f6f8;--s1:#fbfbfc;--s2:#e6e7ea;--lime:#cfe86b;--r:20px}   /* стиль ЖК «Времена года»: красный акцент, графит, салатовый */
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141518;--panel:#1e1f23;--text:#eeeef1;--muted:#9a9da5;--accent:#e3474d;--on:#fff;--line:#34363c;--card:#27282d;--s1:#2c2d32;--s2:#16171a}}
+:root[data-theme="dark"]{--bg:#141518;--panel:#1e1f23;--text:#eeeef1;--muted:#9a9da5;--accent:#e3474d;--on:#fff;--line:#34363c;--card:#27282d;--s1:#2c2d32;--s2:#16171a}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{margin:0}
+html{height:100%;overflow:hidden}
+body{height:calc(100vh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))}
+body{background:var(--bg);color:var(--text);font:15px/1.4 Montserrat,"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;display:flex;flex-direction:column;overflow:hidden}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 18px;background:var(--panel);border-bottom:1px solid var(--line)}
+h1{font-size:18px;margin:0;font-weight:700}
+.meta{display:flex;gap:8px;font-size:13px;color:var(--muted)}
+.meta span{background:var(--card);border-radius:14px;padding:3px 10px}.meta span::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);margin:0 7px 1px 0;vertical-align:middle}
+header h1{font-weight:800;letter-spacing:-.01em;text-transform:uppercase;font-size:18px}.meta .jk{background:var(--lime);color:#1d1d21;font-weight:600}.meta .jk::before{background:#1d1d21}
+main{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 320px;min-height:0}
+#stage{position:relative;min-height:0;touch-action:none;background:radial-gradient(ellipse at 50% 38%,var(--s1),var(--s2))}
+#stage canvas{display:block}
+#hint{position:absolute;left:12px;right:12px;top:12px;z-index:2;background:var(--panel);color:var(--muted);border:1px solid var(--line);border-radius:14px;padding:8px 14px;font-size:13px;line-height:1.35;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.08);text-align:center}
+aside{background:var(--panel);border-left:1px solid var(--line);overflow:auto;padding:16px;display:flex;flex-direction:column;gap:20px}
+section{display:flex;flex-direction:column;gap:10px}
+section[hidden]{display:none}
+h2{font-size:14px;margin:0;font-weight:700}
+h2 em{font-style:normal;color:var(--accent)}
+button{min-height:44px;padding:0 14px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);font:inherit;font-weight:600;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.seg{display:flex;background:var(--card);border-radius:12px;padding:3px;gap:3px}
+.seg button{flex:1;border:0;background:transparent;min-height:40px;border-radius:9px}
+/* переключатель 3D/2D — в правом верхнем углу окна с планировкой */
+.vseg{position:absolute;top:12px;right:12px;z-index:3;background:var(--panel);border:1px solid var(--line);box-shadow:0 4px 14px rgba(0,0,0,.12)}.vseg button{min-height:34px;padding:0 14px;font-weight:700}
+#hint{right:120px}
+.seg button[aria-pressed="true"],.chip[aria-pressed="true"]{background:var(--accent);color:var(--on);border-color:var(--accent)}
+.tgl{display:flex;justify-content:space-between;align-items:center;text-align:left}.tgl .sh{display:none}
+.tgl::after{content:"";width:36px;height:20px;border-radius:10px;background:radial-gradient(circle at 10px 50%,#fff 7px,transparent 8px),var(--line)}
+.tgl[aria-pressed="true"]::after{background:radial-gradient(circle at 26px 50%,#fff 7px,transparent 8px),var(--accent)}
+.chips{display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;padding-bottom:2px;flex:0 0 auto;align-items:center}.chip{flex:0 0 auto}
+#catTitle{margin:2px 0 0;font-size:14px;font-weight:700}
+@media (min-width:761px){.cards .thumb{height:auto;aspect-ratio:1/1}.cards .thumb svg{width:72px;height:52px}}
+@media (max-width:760px){#catTitle{display:none}}
+.chip{min-height:34px;padding:0 12px;border-radius:17px;font-size:13px;white-space:nowrap}
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.card{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:10px;border-radius:14px;text-align:left;min-height:104px}
+.card svg{width:48px;height:34px;stroke:var(--accent);fill:none;stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round}
+.card small{color:var(--muted);font-weight:400}
+.thumb{position:relative;display:flex;align-items:center;justify-content:center;width:100%;height:64px;border-radius:10px;background:#fff;overflow:hidden}   /* фон картинок всегда белый, и в тёмной теме */
+.thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+/* перетаскивание карточки: без системного меню и выделения при долгом нажатии; поднятая карточка и картинка под пальцем */
+.cards .card,.cards img{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-user-drag:none}
+.card.lifted{transform:scale(.94);box-shadow:0 0 0 2px var(--accent);transition:transform .15s}
+.cdghost{position:fixed;left:-44px;top:-44px;width:88px;height:88px;border-radius:14px;overflow:hidden;background:#fff;box-shadow:0 10px 26px rgba(0,0,0,.25);pointer-events:none;z-index:40;transition:opacity .12s}
+.cdghost img{width:100%;height:100%;object-fit:cover}
+.thumb img+svg{display:none}
+.pgrid{display:flex;flex-direction:column;gap:10px}
+.ph small{font-weight:400;color:var(--muted);font-size:12px;margin-left:4px}
+.presets{display:flex;flex-direction:column;gap:8px}.pre{display:block;text-align:left;padding:10px 12px;border-radius:12px;min-height:0}.pre b{display:block;font-size:14px}.pre small{display:block;color:var(--muted);font-size:12px;margin-top:2px}.pre .sh{display:none}
+.floors{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.fsw{display:flex;flex-direction:column;align-items:stretch;gap:4px;padding:6px;border-radius:12px;font-size:12px;text-align:left;min-height:0}
+.fsw span{display:block;width:100%;aspect-ratio:1.5;border-radius:8px;background:#e9e4dc center/cover}
+.fsw[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 2px var(--accent)}   /* есть фото или нарисованное превью: значок под ним не нужен */
+.card[disabled]{opacity:.5;cursor:default}
+#secP{border-top:0;padding-top:0}
+#addP,#demo,#resetR{width:100%;flex-direction:row;align-items:center;gap:12px;min-height:64px;min-width:0}
+#addP small,#demo small,#resetR small{display:block;margin-top:2px}
+.card[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 2px var(--accent)}   /* включён режим: дверной проём или выбранная карточка мебели ждёт нажатия на план */
+.icons button[hidden]{display:none}
+.row{display:flex;gap:8px}.row button{flex:1}
+.tabs{display:flex}.tabs button{flex:1 1 auto;padding:0 8px;white-space:nowrap}   /* ширина по тексту: «Настройки» длиннее остальных */
+aside:not([data-tab="furn"]) #secF,aside:not([data-tab="part"]) #secP,aside:not([data-tab="view"]) #secV{display:none}
+#snap{min-height:40px;background:var(--accent);color:var(--on);border-color:var(--accent)}
+#helpX,.shotc .row a,.shotc .row button{text-transform:uppercase;letter-spacing:.03em;font-weight:600}
+.hbtns{display:flex;gap:8px}.ibtn:disabled{opacity:.35;cursor:default}.ibtn{width:40px;padding:0;border-radius:50%;display:flex;align-items:center;justify-content:center}.ibtn svg{width:22px;height:22px}#help{font-size:19px;font-weight:700;min-height:40px}
+.shotc h2{font-size:16px}.shotc ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:14px}
+/* окно подсказок: карточки с картинкой-жестом; анимация только пока окно открыто, при «уменьшить движение» выключена */
+.helpc{width:760px}
+.shotc ul.tips{list-style:none;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.tip{display:flex;gap:12px;align-items:center;background:var(--card);border-radius:12px;padding:8px 10px 8px 8px}
+.tip svg{flex:0 0 96px;height:64px;background:var(--panel);border-radius:10px;stroke:var(--accent);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tip b{display:block;font-size:14px;margin-bottom:2px}.tip span{font-size:13px;color:var(--muted);line-height:1.3}
+.tip .hf{fill:var(--accent);fill-opacity:.3;stroke:none}.tip .fa{fill:var(--accent)}.tip .fl{fill:var(--accent);fill-opacity:.14}
+.tip .gh{stroke-dasharray:3 3;opacity:.5}.tip .bad{stroke:#c0392b}.tip .badf{fill:#c0392b;fill-opacity:.18}
+.tip .a1{animation:hmx 2.4s ease-in-out infinite}.tip .a2{animation:hpa 2s ease-in-out infinite}.tip .a3{animation:hpb 2s ease-in-out infinite}
+.tip .a4{transform-box:fill-box;transform-origin:center;animation:hpop 2.6s ease-out infinite}.tip .a5{animation:hmv 2.6s ease-in-out infinite alternate}.tip .a6{animation:hsn 2.4s ease-out infinite}
+@keyframes hmx{0%,100%{transform:translateX(-5px)}50%{transform:translateX(5px)}}
+@keyframes hpa{0%,100%{transform:translate(-3px,3px)}50%{transform:translate(4px,-4px)}}
+@keyframes hpb{0%,100%{transform:translate(3px,-3px)}50%{transform:translate(-4px,4px)}}
+@keyframes hpop{0%,30%{transform:scale(0);opacity:0}55%,100%{transform:scale(1);opacity:1}}
+@keyframes hmv{0%,15%{transform:translateX(0)}85%,100%{transform:translateX(44px)}}
+@keyframes hsn{0%,30%{transform:translateY(-9px)}55%,100%{transform:translateY(0)}}
+@media (prefers-reduced-motion:reduce){.tip svg *{animation:none!important}}
+/* подсказка при открытии: как вращать, приближать и сдвигать вид; скрывается при первом касании окна 3D, кнопкой или через NAV_MS */
+#nav{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);z-index:4;width:min(560px,calc(100% - 24px));box-sizing:border-box;background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.18);padding:12px;display:flex;flex-direction:column;gap:10px;animation:hq .45s ease both}
+#nav[hidden]{display:none}
+.navh{display:flex;justify-content:space-between;align-items:center;gap:10px}.navh b{font-size:15px}
+#navX{min-height:34px;padding:0 14px;border-radius:10px;background:var(--accent);color:var(--on);border:0;font-weight:600}
+.navt{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+#nav .tip{flex-direction:column;gap:4px;padding:8px 6px;text-align:center}
+#nav .tip svg{flex:none;width:96px;height:64px}#nav .tip b{margin:0;font-size:13px}#nav .tip span{font-size:12px}
+@media (max-width:760px){#nav{bottom:10px;padding:10px;gap:8px}#nav .tip svg{width:72px;height:48px}#nav .tip span{font-size:11px}}
+@media (prefers-reduced-motion:reduce){#nav{animation:none}}
+#hintQ{position:fixed;z-index:30;max-width:calc(100vw - 16px);background:var(--accent);color:#fff;font-size:14px;font-weight:600;line-height:1.3;padding:10px 14px;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.2);pointer-events:none;animation:hq .45s ease both}
+#hintQ[hidden]{display:none}
+#hintQ::before{content:'';position:absolute;top:-6px;right:var(--ax,16px);width:14px;height:14px;background:var(--accent);transform:rotate(45deg);border-radius:2px}
+#help.pulse{animation:pq 1.6s ease-in-out infinite;border-color:var(--accent);color:var(--accent)}
+@keyframes pq{0%,100%{box-shadow:0 0 0 0 rgba(193,39,45,.5)}50%{box-shadow:0 0 0 9px rgba(193,39,45,0)}}
+@keyframes hq{from{opacity:0;transform:translateY(-6px)}}
+@media (prefers-reduced-motion:reduce){#help.pulse,#hintQ{animation:none}}
+#helpX{background:var(--accent);color:var(--on);border-color:var(--accent)}
+.helpc>.row{position:sticky;bottom:-14px;background:var(--panel);padding:8px 0 14px;margin-bottom:-14px}   /* кнопка закрытия всегда видна при прокрутке */
+@media (max-width:760px){.shotc ul.tips{grid-template-columns:1fr}.tip svg{flex-basis:72px;height:48px}.tip span{font-size:12px}}
+#selS{position:absolute;left:12px;right:12px;bottom:12px;z-index:3;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;box-shadow:0 8px 24px rgba(0,0,0,.16);display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;opacity:0;visibility:hidden;transform:translateY(10px);transition:opacity .25s ease,transform .25s ease,visibility .25s}
+#selS.open{opacity:1;visibility:visible;transform:none}
+#bOk{display:none}
+#selS.wsel>.selh+div,#selS.wsel #rowD{grid-column:1/-1}   /* у стены: длина, под ней ширина проёма */
+.icons .bl{display:none}
+#selS h2,#selS .row,#rowP{grid-column:1/-1}   /* «Высота» и «Поворот» в одной строке; если одного нет, второй на всю ширину (см. syncPanel) */
+.selh{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.icons{display:flex;gap:8px}
+.icons button{width:44px;padding:0;display:flex;align-items:center;justify-content:center}
+.icons svg{width:22px;height:22px}
+@media (min-width:761px){#selS{right:auto;width:540px}.swr{overflow:visible;padding:4px}}   /* на ПК все цвета видны в одном ряду */
+/* ряд цветов в панели выбранного предмета: листается вбок */
+.swr{grid-column:1/-1;display:flex;gap:7px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;touch-action:pan-x;padding:3px 2px}.swr::-webkit-scrollbar{display:none}
+.swr .sw{flex:0 0 26px;width:26px;height:26px;min-height:0;min-width:0;padding:0;border-radius:50%;border:1px solid rgba(0,0,0,.18)}
+.swr .sw[aria-pressed="true"]{box-shadow:0 0 0 2px var(--panel),0 0 0 4px var(--accent)}
+.swr .sw.pick{position:relative;overflow:hidden;cursor:pointer;background:radial-gradient(circle,var(--pc,#fff) 0 7px,transparent 8px),conic-gradient(#e74c3c,#f1c40f,#2ecc71,#1abc9c,#3498db,#9b59b6,#e74c3c)}   /* «любой цвет»: радужный кружок, в центре — выбранный цвет */
+.swr .sw.pick input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:0;padding:0}
+.swr .sw.reset{background:linear-gradient(to top right,transparent 45%,#c0392b 46%,#c0392b 54%,transparent 55%),#fff}   /* «как было»: перечёркнутый кружок */
+.shot{position:fixed;inset:0;z-index:10;background:rgba(10,14,20,.7);display:flex;align-items:center;justify-content:center;padding:16px}
+.shot[hidden]{display:none}
+.shotc{background:var(--panel);border-radius:var(--r);padding:14px;max-width:min(900px,100%);max-height:100%;overflow:auto;display:flex;flex-direction:column;gap:10px}
+.shotc img{width:100%;height:auto;max-height:60vh;object-fit:contain;border-radius:10px;border:1px solid var(--line);display:block}
+.shotc p{margin:0;font-size:12px;color:var(--muted)}
+.shotc a{flex:1;display:flex;align-items:center;justify-content:center;min-height:44px;border-radius:12px;background:var(--accent);color:var(--on);font-weight:600;text-decoration:none}
+button.danger{color:#c0392b}
+label{display:flex;justify-content:space-between;font-size:13px;color:var(--muted)}
+label b{color:var(--text)}
+input[type=range]{width:100%;accent-color:var(--accent);margin:6px 0 0;min-height:28px}
+@media (max-width:760px){
+  header{padding:8px 12px}.hbtns{gap:6px}.ibtn{width:36px;min-height:36px}#help{min-height:36px}.meta{display:none}header h1{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  main{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto}
+  aside{border-left:0;border-top:1px solid var(--line);padding:8px 12px 10px;gap:8px;overflow:visible}
+  .tabs{display:flex}
+  aside:not([data-tab="furn"]) #secF,aside:not([data-tab="part"]) #secP,aside:not([data-tab="view"]) #secV{display:none}
+  section{gap:8px}
+  #secP{border-top:0;padding-top:0}
+  /* все вкладки одной высоты: при переключении нижняя панель не меняет размер, окно 3D не прыгает */
+  #secF,#secP,#secV{height:218px;box-sizing:border-box;overflow-y:auto;align-content:start}
+  #secV{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px}#secV h2{grid-column:1/-1}
+  /* строка 1: ползунки высоты и прозрачности стен, строка 2: «Названия» и «Двери» (подписи короткие), ниже готовые расстановки */
+  #secV>:nth-child(2){grid-column:1;grid-row:2}#secV>:nth-child(3){grid-column:2;grid-row:2}
+  #secV>#tl{grid-column:1;grid-row:3}#secV>#td{grid-column:2;grid-row:3}#secV .tgl .lf{display:none}#secV .tgl .sh{display:inline}
+  .vseg{top:8px;right:8px}.vseg button{min-height:32px;padding:0 12px}#hint{right:104px}
+  #secV .ph{grid-column:1/-1;grid-row:4;margin:4px 0 0}#secV .presets{grid-column:1/-1;grid-row:5}.pre .lf{display:none}.pre .sh{display:inline}.ph small{display:none}.presets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.pre{padding:7px 8px}.pre small{display:none}.pre b{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #secV>h2:first-child{display:none}   /* на телефоне заголовок «Настройки» дублирует название вкладки */
+  .cards{display:flex;overflow-x:auto;gap:8px;padding-bottom:2px}
+  /* квадратные карточки мебели: картинка квадратом во всю ширину, под ней название (до двух строк) и размер */
+  .card{flex:0 0 auto;min-width:116px;min-height:84px;padding:8px 10px}.card svg{width:40px;height:28px}.thumb{height:38px}
+  .cards .card{flex:0 0 118px;width:118px;min-width:0;padding:6px;gap:3px}.cards .thumb{height:auto;aspect-ratio:1/1}
+  .cards .card>span:not(.thumb){display:none}   /* на телефоне под картинкой только размер; название — в подсказке и в панели выбранного предмета */
+  .cards .card small{font-size:11px}
+  /* ряды категорий и карточек листаются только по горизонтали, вкладка «Мебель» по вертикали не двигается; полосы прокрутки скрыты */
+  #secF{overflow-y:hidden}
+  /* вкладка «Ремонт»: перегородка и проём в одну строку, ниже образцы пола лентой */
+  .pgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}#secP .pgrid .card{flex-direction:column;align-items:flex-start;justify-content:flex-start;min-height:0;padding:6px 8px 7px;gap:3px;font-size:12px;line-height:1.2}#secP .pgrid .card small{display:none}#secP .pgrid .card svg{flex:0 0 22px;width:32px;height:22px}
+  #secP>h2:first-child{display:none}   /* на телефоне три кнопки в ряд без заголовка, чтобы поместились образцы пола */
+  .floors{display:flex;overflow-x:auto;overflow-y:hidden;touch-action:pan-x;scrollbar-width:none}.floors::-webkit-scrollbar{display:none}.fsw{flex:0 0 92px}
+  .chips,.cards{overflow-y:hidden;touch-action:pan-x;overscroll-behavior-x:contain;scrollbar-width:none}
+  .chips::-webkit-scrollbar,.cards::-webkit-scrollbar{display:none}
+  /* панель выбранного предмета открывается на месте нижнего меню (той же высоты), окно 3D не перекрывается и не меняет размер.
+     Строки: название и «Готово»; ширина, глубина и иконки; поворот; цвета (лента листается вбок) */
+  aside{position:relative}
+  aside>#selS{position:absolute;inset:0;z-index:5;border:0;border-top:1px solid var(--line);border-radius:0;box-shadow:none;transform:none;
+    grid-template-columns:1fr 1fr auto;grid-template-rows:repeat(5,auto) 1fr;gap:8px 12px;padding:12px 14px;align-items:center;align-content:start}
+  .selh{display:contents}
+  #selS h2{grid-column:1/3;grid-row:1;font-size:13px;color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #selS h2 em{color:var(--accent)}
+  #bOk{display:flex;grid-column:3;grid-row:1;justify-self:end;align-items:center;gap:4px;min-height:34px;padding:0 12px;border-radius:10px;background:var(--accent);color:var(--on);border:0;font-weight:600;font-size:13px}
+  #selS>.selh+div{grid-column:1;grid-row:2}#rowD{grid-column:2/-1;grid-row:2}   /* ширина и глубина рядом, кнопки отдельной строкой под ними */
+  .icons{grid-column:1/-1;grid-row:3;gap:6px;justify-content:flex-start}
+  #selS.wsel>.selh+div{grid-column:1/-1;grid-row:2}#selS.wsel #rowD{grid-column:1/-1;grid-row:3}#selS.wsel #rowP{grid-row:4}#selS.wsel .icons{grid-row:5}
+  .icons button{flex:1 1 0;max-width:84px;width:auto;min-height:52px;padding:7px 2px 5px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:3px}   /* значок и подпись под ним */
+  .icons .bl{display:block;font-size:10.5px;line-height:1.15;text-align:center;font-weight:500}
+  #rowP{grid-column:1/-1}#rowH{grid-column:1;grid-row:4}#rowA{grid-column:2/-1;grid-row:4}#rowC{grid-column:1/-1;grid-row:5}
+  .swr .sw{flex-basis:30px;width:30px;height:30px}
+  #selS label{font-size:12px}
+  #selS input[type=range]{min-height:24px;margin:0}
+  #hint{top:8px;font-size:12px}
+}
+@media (min-width:761px) and (max-height:520px){
+  main{grid-template-columns:minmax(0,1fr) 250px}aside{padding:10px;gap:12px}.cards{grid-template-columns:1fr}header{padding:6px 14px}
+}
+</style></head>
+<body>
+<header><h1>Планировщик мечты</h1><div class="meta"><span class="jk">ЖК «Времена года»</span><span>4К · квартира №64 · 84,5 м²</span><span>потолки 2,7 м</span></div><div class="hbtns"><button id="undo" class="ibtn" aria-label="Назад" title="Назад: отменить последнее действие (Ctrl+Z)" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button><button id="help" class="ibtn" aria-label="Подсказки" title="Как пользоваться">?</button><button id="snap" class="ibtn" aria-label="Сделать снимок" title="Снимок планировки"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></button><button id="clearAll" class="ibtn danger" aria-label="Удалить всю мебель" title="Удалить всю мебель сразу"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12h10l1-12M9 7V4h6v3"/></svg></button></div></header>
+<div id="hintQ" hidden>Здесь подсказки: как вращать, двигать и добавлять мебель</div>
+<main>
+  <div id="stage"><div class="seg vseg" role="group" aria-label="Вид квартиры"><button id="v3d" aria-pressed="true" title="Объёмный вид">3D</button><button id="vtop" aria-pressed="false" title="Вид сверху, как план">2D</button></div><div id="nav" class="nav" hidden></div><div id="hint">Вращение: перетаскивание · масштаб: щипок · добавьте мебель справа</div>
+    <section id="selS">
+      <div class="selh"><h2>Выбрано: <em id="selName"></em></h2><button id="bOk" title="Готово" aria-label="Готово: закрыть настройки предмета">Готово</button><div class="icons">
+        <button id="bRot" title="Повернуть" aria-label="Повернуть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 4v5h-5"/></svg><span class="bl" id="bRotL">Повернуть на 90°</span></button>
+        <button id="bAddD" hidden title="Добавить дверь" aria-label="Добавить дверь"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h12M6 21V3h9v8"/><path d="M12 12v.5"/><path d="M19 15v6M16 18h6"/></svg><span class="bl" id="bAddDL">Добавить дверь</span></button>
+        <button id="bOpen" hidden title="Открыть дверь" aria-label="Открыть дверь"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M6 21V3h7"/><path d="M13 3l6 3v15l-6-3z"/><path d="M15.5 12v1"/></svg><span class="bl" id="bOpenL">Открыть дверь</span></button>
+        <button id="bFlip" hidden title="Дверь открывается в другую сторону" aria-label="Дверь открывается в другую сторону"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h14l-4-4M20 15H6l4 4"/></svg><span class="bl" id="bFlipL">Другая сторона</span></button>
+        <button id="bDoor" hidden title="Убрать проём" aria-label="Убрать проём"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18M6 20V4h12v16"/><path d="M9.5 10l5 5M14.5 10l-5 5"/></svg><span class="bl" id="bDoorL">Убрать проём</span></button>
+        <button id="bDel" class="danger" title="Удалить" aria-label="Удалить"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12h10l1-12M9 7V4h6v3"/></svg><span class="bl" id="bDelL">Удалить</span></button></div></div>
+      <div><label><span id="lW">Ширина</span> <b id="vW"></b></label><input id="sW" type="range"></div>
+      <div id="rowD"><label><span id="lD">Глубина</span> <b id="vD"></b></label><input id="sD" type="range"></div>
+      <div id="rowP"><label>Положение проёма <b id="vP"></b></label><input id="sP" type="range"></div>
+      <div id="rowH"><label>Высота <b id="vH2"></b></label><input id="sH" type="range" step="10"></div>
+      <div id="rowA"><label>Поворот <b id="vA"></b></label><input id="sA" type="range" min="0" max="355" step="5"></div>
+      <div id="rowC" class="swr" aria-label="Цвет"></div>
+    </section></div>
+  <aside data-tab="furn">
+    <nav class="seg tabs"><button data-t="furn" aria-pressed="true">Мебель</button><button data-t="part" aria-pressed="false">Ремонт</button><button data-t="view" aria-pressed="false">Настройки</button></nav>
+    <section id="secF"><h2>Мебель</h2><div class="chips" id="chips"></div><h3 id="catTitle"></h3><div class="cards" id="cards"></div></section>
+    <section id="secP"><h2>Перегородки</h2>
+      <div class="pgrid"><button class="card" id="addP"><svg viewBox="0 0 48 34"><rect x="4" y="13" width="40" height="8" rx="1"/><path d="M4 6v22M44 6v22"/></svg><span>+ Перегородка<small>длина до 10 м · проём добавляется кнопкой «Добавить дверь» у выбранной перегородки</small></span></button>
+      <button class="card" id="demo" aria-pressed="false"><svg viewBox="0 0 48 34"><path d="M4 30V6h14l-4 8 6 6-3 10zM44 30V6H30l3 7-5 7 4 10z"/><path d="M22 4l2 5M26 3l-1 6"/></svg><span>Снести стены<small>межкомнатные; санузлы, балкон и несущие останутся</small></span></button>
+      <button class="card" id="resetR"><svg viewBox="0 0 48 34"><path d="M12 9a13 13 0 1 1-3 9"/><path d="M12 3v7H5"/></svg><span>Сбросить ремонт<small>стены, проёмы и пол — как в квартире изначально; мебель останется</small></span></button></div>
+      <h2>Пол в комнатах</h2><div class="floors" id="floors"></div>
+    </section>
+    <section id="secV"><h2>Настройки</h2>
+      <div><label>Высота стен <b id="vH">120 см</b></label><input id="wh" type="range" min="300" max="2700" step="100" value="1200"></div>
+      <div><label>Прозрачность стен <b id="vO">0%</b></label><input id="wo" type="range" min="0" max="90" step="5" value="0"></div>
+      <button class="tgl" id="tl" aria-pressed="true"><span class="lf">Названия комнат</span><span class="sh">Названия</span></button>
+      <button class="tgl" id="td" aria-pressed="false"><span class="lf">Двери в проёмах</span><span class="sh">Двери</span></button>
+      <h2 class="ph">Готовые расстановки <small>заменяют текущую мебель</small></h2><div class="presets" id="presets"></div>
+    </section>
+  </aside>
+</main>
+<div class="shot" id="helpM" hidden><div class="shotc helpc"><h2>Как пользоваться</h2><ul id="tips" class="tips"></ul><p>Эта шпаргалка всегда открывается кнопкой «?» в шапке.</p><div class="row"><button id="helpX">Понятно, начать</button></div></div></div>
+<div class="shot" id="shot" hidden><div class="shotc"><img id="shotImg" alt="Снимок планировки"><div class="row"><a id="shotDl" download="planirovka.png">Скачать PNG</a><button id="shotX">Закрыть</button></div><p>Если загрузка не началась, нажмите на картинку и удерживайте, чтобы сохранить.</p></div></div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script>
+const T=THREE,M=0.001,HF=2700,$=id=>document.getElementById(id);
+let H=HF,glassDone=false,wallOp=1,jc=0,doorsOn=false;
+const stage=$('stage');
+const renderer=new T.WebGLRenderer({antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.outputEncoding=T.sRGBEncoding;renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;
+stage.appendChild(renderer.domElement);
+const scene=new T.Scene();
+const FOV=40,K=2*Math.tan(FOV*Math.PI/360);
+const camera=new T.PerspectiveCamera(FOV,1,0.5,200),ocam=new T.OrthographicCamera(-1,1,1,-1,0.1,100);ocam.up.set(0,0,-1);let cur=camera;
+scene.add(new T.HemisphereLight(0xffffff,0xbab5ae,0.55));
+const sun=new T.DirectionalLight(0xfff4e6,0.6);sun.position.set(2,16,-10);sun.target.position.set(7.5,0,-5);scene.add(sun,sun.target);
+sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-14,right:14,top:14,bottom:-14,near:1,far:50});
+sun.shadow.camera.updateProjectionMatrix();sun.shadow.bias=-0.0006;sun.shadow.normalBias=0.03;
+// ---------- текстуры (процедурные; если в textures/ лежат файлы, они их заменят)
+const rnd=(()=>{let s=7;return()=>(s=(s*16807)%2147483647)/2147483647})();
+function ctex(w,h,draw){const c=document.createElement('canvas');c.width=w;c.height=h;draw(c.getContext('2d'));const t=new T.CanvasTexture(c);t.wrapS=t.wrapT=T.RepeatWrapping;t.encoding=T.sRGBEncoding;t.anisotropy=4;return t}
+const woodTex=()=>ctex(1024,512,g=>{const pal=['#d8b887','#d0ad7c','#dcbe92','#cba575','#d5b283'];
+  for(let r=0;r<8;r++){const off=(r*379)%512;for(let p=0;p<2;p++){const col=pal[Math.floor(rnd()*5)],gr=[0,1,2,3,4].map(()=>rnd()*64);
+    for(let n=-1;n<=1;n++){const x=off+p*512+n*1024;g.fillStyle=col;g.fillRect(x,r*64,512,64);g.fillStyle='rgba(90,60,30,.14)';gr.forEach(q=>g.fillRect(x,r*64+q,512,1));g.fillStyle='rgba(70,45,20,.35)';g.fillRect(x,r*64,512,2);g.fillRect(x,r*64,2,64)}}}});
+const tileTex=()=>ctex(512,512,g=>{for(let i=0;i<4;i++)for(let j=0;j<4;j++){const v=Math.floor(rnd()*10);g.fillStyle=`rgb(${196+v},${190+v},${182+v})`;g.fillRect(i*128,j*128,128,128)}
+  g.strokeStyle='#8f8a84';g.lineWidth=5;for(let i=0;i<=4;i++){g.beginPath();g.moveTo(i*128,0);g.lineTo(i*128,512);g.moveTo(0,i*128);g.lineTo(512,i*128);g.stroke()}});
+const lm=c=>new T.MeshLambertMaterial({color:c});
+const MAT={leaf:lm(0xd9c4a3),lhd:lm(0x2b2b2b),ext:lm(0xf0eeea),part:lm(0xffffff),wet:lm(0xd3dbd7),shaft:lm(0xe1e4e8),log:lm(0xaaa59d),
+  wood:new T.MeshLambertMaterial({map:woodTex()}),tile:new T.MeshLambertMaterial({map:tileTex()})};
+MAT.wood.userData.base=[2.56,1.28];MAT.tile.userData.base=[1.2,1.2];
+const glass=new T.MeshPhongMaterial({color:0xd6ecf8,specular:0xffffff,shininess:110,transparent:true,opacity:0.22,depthWrite:false}); // прозрачное стекло с лёгким эффектом бликов
+// свои текстуры: textures/floor_wood.jpg (повтор каждые 1,5 м) и textures/floor_tile.jpg (каждый 1 м)
+const TL=new T.TextureLoader();
+[['wood','textures/floor_wood.jpg',[1.5,1.5]],['tile','textures/floor_tile.jpg',[1,1]]].forEach(([k,f,sz])=>TL.load(f,t=>{
+  t.wrapS=t.wrapT=T.RepeatWrapping;t.encoding=T.sRGBEncoding;t.anisotropy=4;const b=MAT[k].userData.base;t.repeat.set(b[0]/sz[0],b[1]/sz[1]);MAT[k].map=t;MAT[k].needsUpdate=true},undefined,()=>{}));
+// ---------- геометрия квартиры (план: x вправо, y вверх, мм; в 3D y -> -z)
+const leafG=new T.Group(),walls=new T.Group(),glazing=new T.Group(),floor=new T.Group(),labels=new T.Group();
+scene.add(walls,glazing,floor,labels,leafG);
+const OB=[],FL=[],FLP=[]; // FLP: ниши окон (до стекла), куда может заходить перегородка
+function box(x0,y0,x1,y1,z0,z1,m,g){
+  const jt=g===walls?(jc++%4)*0.5:0,w=(x1-x0)*M,d=(y1-y0)*M,h=(z1+jt-z0)*M;if(w<=0||d<=0||h<=0)return;
+  if(!glassDone&&(g===walls||g===glazing)&&z0<750){const e=[x0,y0,x1,y1];if(g===walls)e.wall=true;OB.push(e)}
+  const geo=new T.BoxGeometry(w,h,d),s=new T.Mesh(geo,m);
+  s.position.set((x0+x1)/2*M,(z0+z1+jt)/2*M,-(y0+y1)/2*M);
+  if(g===floor&&m.userData.base){const b=m.userData.base,P=geo.attributes.position,U=geo.attributes.uv;
+    for(let i=0;i<P.count;i++)U.setXY(i,(P.getX(i)+s.position.x)/b[0],(P.getZ(i)+s.position.z)/b[1])}
+  s.receiveShadow=true;s.castShadow=g!==floor&&m!==glass&&!(g===walls&&wallOp<=0.6);g.add(s);return s;
+}
+function wall(r,m,holes=[]){
+  const [x0,y0,x1,y1]=r,ax=(x1-x0)>=(y1-y0),a0=ax?x0:y0,a1=ax?x1:y1;
+  const seg=(s,e,z0,z1)=>{if(e<=s)return;ax?box(s,y0,e,y1,z0,z1,MAT[m],walls):box(x0,s,x1,e,z0,z1,MAT[m],walls)};
+  let p=a0;
+  holes.slice().sort((a,b)=>a[0]-b[0]).forEach(h=>{
+    seg(p,h[0],0,H);if(h[2]>0){seg(h[0],h[1],0,h[2]);   // под окном стена всегда до подоконника, даже если стены ниже: окно не висит в воздухе
+      if(h[4]&&!glassDone&&!ax){OB[OB.length-1].p=[x0,h[0],(x0+x1)/2+35,h[1]];FLP.push([(x0+x1)/2+35,h[0],x1,h[1]])}}
+    // (перегородка доходит до рамы окна, а не до внутренней грани стены)
+    if(h[3]<H)seg(h[0],h[1],h[3],H);   // стена над проёмом до текущей высоты
+    if(h[4]===1&&!glassDone){const cx=(x0+x1)/2,cy=(y0+y1)/2;
+      ax?box(h[0],cy-10,h[1],cy+10,h[2],h[3],glass,glazing):box(cx-10,h[0],cx+10,h[1],h[2],h[3],glass,glazing);}
+    p=h[1];
+  });
+  seg(p,a1,0,H);
+}
+const fl=(r,m)=>{FL.push(r);box(r[0],r[1],r[2],r[3],-60,0,MAT[m],floor)};
+[[0,100,3590,3420],[0,3500,3590,6690],[0,6770,5150,9800],[3670,4870,5150,6770],[7640,100,13380,4160],
+ [3670,2160,7440,4870],[3670,4870,4570,4950],[5920,4870,6920,4950],[3590,2300,3670,3200],[3590,3730,3670,4630],[4100,2080,4900,2160],[6140,2080,6940,2160],[7440,2185,7640,3312],[13380,2400,13760,3700]].forEach(r=>fl(r,'wood'));
+[[3670,100,5150,2080],[5230,100,7440,2080]].forEach(r=>fl(r,'tile'));
+fl([13760,820,15520,4160],'log');
+function buildWalls(hh){
+  H=hh;walls.clear();
+  wall([-370,-100,13760,100],'ext');
+  wall([-370,100,0,9800],'ext',[[650,2250,800,2300,2],[3950,5550,800,2300,2],[7300,8900,800,2300,2]]);
+  wall([-370,9800,5230,10000],'ext');
+  wall([7440,100,7640,2185],'ext');box(7440,2185,7640,3312,2100,H,MAT.ext,walls);wall([7440,3312,7640,4950],'ext');
+  wall([7640,4160,15600,4360],'ext');
+  wall([13380,100,13760,4160],'ext',[[2400,3700,0,2200,1]]);
+  wall([13760,620,15600,820],'ext');
+  // межкомнатные стены между комнатами и прихожей здесь не строятся: это обычные перегородки (ORIG), их можно выбрать, двигать и сносить
+  // остаются: граница квартиры у лестницы (с входной дверью), санузлы, наружные стены, лоджия
+  wall([5150,4870,5230,9800],'part');
+  wall([5150,4870,7440,4950],'part',[[5920,6920,0,2100]]);
+  wall([3590,100,3670,2300],'wet');wall([5150,100,5230,2080],'wet');
+  wall([3670,2080,7440,2160],'wet',[[4100,4900,0,2100],[6140,6940,0,2100]]);
+  buildLeaves();
+}
+// ---- двери в проёмах (кнопка «Двери в проёмах» во вкладке «Настройки»): закрытое полотно с ручками с двух сторон.
+// Встроенные проёмы: только санузлы (в проёме у лестницы уже стоит входная дверь); в проёмах перегородок полотно строится вместе с перегородкой.
+// Двери всегда в полный рост DOOR_FULL, даже если стены опущены
+const LEAF_T=40,LEAF_GAP=10,HANDLE_Z=1000,DOOR_FULL=2100;
+const FDOORS=[[4100,4900,2080,2160],[6140,6940,2080,2160]],FD_DIR=-1;   // [x0, x1, y0, y1] проёма в стене вдоль x
+// дверь открывается нажатием: полотно висит на петле у левого края (hinge), состояние st={open} хранится у проёма и переживает перестройку
+// st.dir: в какую сторону открывается (1 или -1); двери санузлов по правилам открываются наружу, в прихожую
+const DOOR_OPEN=-95*Math.PI/180,DOOR_SWING_MS=450,FD_ST=[],doorAnims=[];
+const doorAng=st=>st.open?DOOR_OPEN*(st.dir||1):0;
+function makeLeaf(w,h,mL,mH,st){ // полотно в своих координатах: ширина по x, высота по y от пола, толщина по z
+  const g=new T.Group(),bx=(m,a,b,c,x,y,z)=>{const o=new T.Mesh(new T.BoxGeometry(a*M,b*M,c*M),m);o.position.set(x*M,y*M,z*M);o.castShadow=o.receiveShadow=true;g.add(o)};
+  bx(mL,w,h,LEAF_T,0,LEAF_GAP/2+h/2,0);
+  const hx=w/2-70,hy=HANDLE_Z;
+  [-1,1].forEach(s=>{bx(mH,40,40,8,hx,hy,s*(LEAF_T/2+4));bx(mH,130,16,16,hx-55,hy,s*(LEAF_T/2+22))});   // розетка и ручка-рычаг
+  const hinge=new T.Group(),out=new T.Group();hinge.position.x=-w/2*M;g.position.x=w/2*M;hinge.add(g);out.add(hinge);
+  st.hinge=hinge;hinge.rotation.y=doorAng(st);g.traverse(o=>{if(o.isMesh)o.userData.leaf=st});
+  return out}
+function toggleDoor(st){st.open=!st.open;swingDoor(st)}
+function swingDoor(st){const h=st.hinge;if(!h)return;const a0=h.rotation.y,a1=doorAng(st),t0=performance.now();
+  for(let i=doorAnims.length-1;i>=0;i--)if(doorAnims[i].st===st)doorAnims.splice(i,1);
+  doorAnims.push({st,f:now=>{const k=Math.min(1,(now-t0)/DOOR_SWING_MS),e=k*k*(3-2*k);h.rotation.y=a0+(a1-a0)*e;return k<1}})}
+function stepDoors(now){for(let i=doorAnims.length-1;i>=0;i--)if(!doorAnims[i].f(now))doorAnims.splice(i,1)}
+function buildLeaves(){
+  leafG.clear();if(!doorsOn)return;const h=DOOR_FULL-LEAF_GAP;
+  FDOORS.forEach(([x0,x1,y0,y1],i)=>{const l=makeLeaf(x1-x0-2*LEAF_GAP,h,MAT.leaf,MAT.lhd,FD_ST[i]||(FD_ST[i]={open:false,dir:FD_DIR,fixed:true}));l.position.set((x0+x1)/2*M,0,-(y0+y1)/2*M);leafG.add(l)})}
+buildWalls(1200);glassDone=true;
+// ---- кухня: неподвижный гарнитур по чертежу (угол: вплотную к стене прихожей и вдоль южной стены; шахту-колонну убрали), мойка и плита. В group furn не входит, поэтому его нельзя выбрать и двигать
+const HIGH=[];function hiReg(o,top){HIGH.push([o,top]);o.visible=H>=top}   // навесные шкафы, зеркала, душ
+const kitG=new T.Group();scene.add(kitG);
+(function(){
+  const sage=lm(0x7f958f),sageD=lm(0x6c807a),cream=lm(0xe4dad3),pl=lm(0x3a3a3c),oak=lm(0xb8916a),wh=lm(0xf7f7f5),
+    marble=new T.MeshPhongMaterial({color:0xf3f2f0,specular:0x444444,shininess:60}),brass=new T.MeshPhongMaterial({color:0xc9a45c,specular:0xffe6a8,shininess:80}),
+    steel=new T.MeshPhongMaterial({color:0xc4c9ce,specular:0xffffff,shininess:90}),dk=new T.MeshPhongMaterial({color:0x141518,specular:0x777777,shininess:100}),dk2=lm(0x3a3f48);
+  const B=(x0,y0,x1,y1,z0,z1,m,g=kitG)=>box(x0,y0,x1,y1,z0,z1,m,g);
+  const C=(r1,r2,h,x,y,z,m,g=kitG,seg=20)=>{const o=new T.Mesh(new T.CylinderGeometry(r1*M,r2*M,h*M,seg),m);o.position.set(x*M,(z+h/2)*M,-y*M);o.castShadow=true;g.add(o);return o};
+  const S=(r,x,y,z,m,g=kitG)=>{const o=new T.Mesh(new T.SphereGeometry(r*M,14,10),m);o.position.set(x*M,z*M,-y*M);o.castShadow=true;g.add(o);return o};
+  const X0=7640,X1=8240,Y1=2185,SX=10280,FX=10900;      // западный ряд x X0..X1 (y 100..Y1), южный x X1..SX (y 100..700), холодильник x SX..FX
+  B(X0,100,X1-30,Y1-30,0,90,pl);B(X1-30,100,SX,670,0,90,pl);                                   // цоколь
+  B(X0,100,X1-20,Y1,90,860,sageD);B(X1-20,100,SX,680,90,860,sageD);                             // корпуса
+  B(X0,100,X1+12,Y1+12,860,900,marble);B(X1,100,SX,712,860,900,marble);                        // столешница: светлый мрамор
+  // фасады западного ряда (смотрят на восток): шалфей, латунные скобы
+  [[100,700],[700,1300],[1300,1900],[1900,Y1]].forEach(([a,b])=>{B(X1-20,a+2,X1,b-2,95,855,sage);if(b-a>400)B(X1,(a+b)/2-90,X1+16,(a+b)/2+90,800,812,brass);else B(X1,(a+b)/2-6,X1+16,(a+b)/2+6,620,800,brass)});
+  // южный ряд (смотрит на север): дверцы, духовка, ящики, узкая бутылочница
+  B(X1+2,680,8838,700,95,855,sage);B(8480,700,8600,716,800,812,brass);
+  B(8842,690,9438,700,95,855,dk);B(8880,700,9400,702,260,640,dk2);B(8900,700,9380,718,690,704,steel);B(8880,700,9400,706,740,790,dk);   // духовка: стекло, ручка, панель
+  [[95,345],[349,600],[604,855]].forEach(([a,b])=>{B(9442,680,10038,700,a,b,sage);B(9650,700,9830,716,b-60,b-48,brass)});
+  B(10042,680,SX-2,700,95,855,sage);B(10154,700,10166,716,620,800,brass);
+  for(let y=700;y<Y1;y+=600)B(X1-1,y-1.5,X1+1,y+1.5,95,855,dk2);                              // тени-зазоры
+  // мойка из нержавейки и латунный смеситель-гусак
+  B(X0+120,1400,X1-90,1800,899,903,steel);B(X0+150,1430,X1-120,1770,890,900,dk2);C(14,14,250,X0+70,1600,900,brass);
+  {const sp=new T.Mesh(new T.CylinderGeometry(10*M,10*M,210*M,12),brass);sp.rotation.z=Math.PI/2;sp.position.set((X0+170)*M,1140*M,-1600*M);kitG.add(sp)}
+  // варочная панель (чёрное стекло) с конфорками
+  B(8880,140,9400,660,900,906,dk);[[9010,270],[9270,270],[9010,530],[9270,530]].forEach(([x,y])=>C(85,85,4,x,y,906,dk2));
+  // холодильник-колонна: кремовый, две двери, длинные стальные ручки
+  B(SX,100,FX,740,0,2000,cream);B(SX+4,736,FX-4,744,700,705,dk2);B(SX+40,744,SX+56,760,760,1500,steel);B(SX+40,744,SX+56,760,300,640,steel);
+  // мелочи на столешнице: доска, чайник, ваза с фруктами, банка с приборами, цветок
+  B(9520,170,9840,400,900,915,oak);C(80,90,190,9980,320,900,steel);B(10055,300,10080,340,960,1060,dk);
+  C(120,70,70,7900,950,900,wh);[[7880,930,0xd98a3a],[7935,975,0x8fae4e],[7905,990,0xc9473f]].forEach(([x,y,c])=>S(45,x,y,1000,lm(c)));
+  C(55,50,150,7820,400,900,wh);[[-15,0],[10,12],[5,-14]].forEach(([dx,dy])=>C(6,6,180,7820+dx,400+dy,1000,oak,kitG,6));
+  C(60,48,110,10180,260,900,cream);[[0,0],[-25,15],[25,-10],[8,25]].forEach(([dx,dy])=>S(40,10180+dx,260+dy,1040,lm(0x6f9481)));
+  // фартук из плитки: высота растёт со стенами (до 1450), но не выше стены
+  const tt=ctex(256,256,g=>{g.fillStyle='#a9a39c';g.fillRect(0,0,256,256);for(let r=0;r<4;r++)for(let c=-1;c<3;c++){const v=Math.floor(rnd()*8);g.fillStyle=`rgb(${236+v},${231+v},${224+v})`;g.fillRect(c*128+(r%2)*64+3,r*64+3,122,58)}});
+  const spG=new T.Group();kitG.add(spG);
+  window.kitSplash=hh=>{spG.clear();const top=Math.min(hh,1450);if(top<=930)return;
+    [[X0,100,FX,108],[X0,108,X0+8,Y1]].forEach(([x0,y0,x1,y1])=>{const len=Math.max(x1-x0,y1-y0),t=tt.clone();t.needsUpdate=true;t.repeat.set(len/300,(top-900)/300);
+      const m=new T.MeshLambertMaterial({map:t});box(x0,y0,x1,y1,900,top,m,spG)})};
+  // навесные шкафы и вытяжка: видны только при высоких стенах (иначе висели бы в воздухе)
+  const up=new T.Group();kitG.add(up);hiReg(up,2200);
+  for(let x=X1;x<SX;x+=600){const x1=Math.min(x+600,SX);if(x1<=8860||x>=9420){B(x,100,x1,450,1450,2150,cream,up);B(x+2,450,x1-2,468,1452,2148,cream,up);B((x+x1)/2-70,468,(x+x1)/2+70,480,1490,1500,brass,up)}}
+  [[100,700],[700,1300],[1300,1900]].forEach(([a,b])=>{B(X0,a,X0+350,b,1450,2150,cream,up);B(X0+350,a+2,X0+368,b-2,1452,2148,cream,up);B(X0+368,(a+b)/2-70,X0+380,(a+b)/2+70,1490,1500,brass,up)});
+  B(8880,100,9400,520,1500,1620,dk,up);B(9040,100,9240,300,1620,2150,steel,up);
+  OB.push([X0,100,X1,Y1],[X1,100,SX,700],[SX,100,FX,740]);
+  kitSplash(H);
+})();
+// ---- входная дверь (стальная): снаружи графит с фрезеровкой, из прихожей светлая дубовая панель с горизонтальными канавками,
+// наличники, порог, петли, ручки-рычаги с розетками, два замка и глазок. Прихожая с юга (y<4870), лестница с севера. Не зависит от высоты стен
+const doorG=new T.Group();scene.add(doorG);
+(function(){
+  const gr=lm(0x34363a),grL=lm(0x45484d),oak=lm(0xc9a47c),oakG=lm(0x9c7a56),arch=lm(0xeeeae4),blk=lm(0x1c1d20),
+    chr=new T.MeshPhongMaterial({color:0xc8ccd1,specular:0xffffff,shininess:90}),st=lm(0x8d9196);
+  const D=(x0,y0,x1,y1,z0,z1,m)=>box(x0,y0,x1,y1,z0,z1,m,doorG);
+  const Cy=(r,len,x,y,z,m,ax)=>{const o=new T.Mesh(new T.CylinderGeometry(r*M,r*M,len*M,24),m);   // ax 'y': ось поперёк двери, 'z': вертикальная
+    if(ax==='y')o.rotation.x=Math.PI/2;o.position.set(x*M,z*M,-y*M);o.castShadow=true;doorG.add(o);return o};
+  const X0=5920,X1=6920,LX0=5965,LX1=6875,LT=2055,HX=6790,LK=[1000,1350];   // LK: высоты замков (нижний ставится на 80 мм выше ручки)
+  // коробка, порог, наличники
+  D(X0,4865,X0+45,4955,0,2100,gr);D(X1-45,4865,X1,4955,0,2100,gr);D(X0,4865,X1,4955,LT+5,2100,gr);
+  D(X0+45,4866,X1-45,4954,0,14,st);
+  D(X0-70,4856,X0,4866,0,2170,arch);D(X1,4856,X1+70,4866,0,2170,arch);D(X0-70,4856,X1+70,4866,2100,2170,arch);    // наличники со стороны прихожей
+  D(X0-50,4954,X0,4962,0,2150,gr);D(X1,4954,X1+50,4962,0,2150,gr);D(X0-50,4954,X1+50,4962,2100,2150,gr);          // уголок коробки со стороны лестницы
+  // полотно: стальной короб и панели
+  D(LX0,4895,LX1,4925,16,LT,gr);
+  D(LX0+8,4885,LX1-8,4895,24,LT-8,oak);
+  [400,800,1200,1600].forEach(z=>D(LX0+8,4883,LX1-8,4885,z,z+8,oakG));                                       // канавки
+  D(LX0+8,4925,LX1-8,4933,24,LT-8,grL);
+  [[LX0+110,LX1-180,160,980],[LX0+110,LX1-180,1100,1920]].forEach(([a,b,z0,z1])=>{                                // фрезеровка снаружи: рамки
+    D(a,4933,b,4937,z0,z0+14,gr);D(a,4933,b,4937,z1-14,z1,gr);D(a,4933,a+14,4937,z0,z1,gr);D(b-14,4933,b,4937,z0,z1,gr)});
+  // петли со стороны лестницы
+  [260,1030,1800].forEach(z=>{Cy(11,120,LX0+4,4940,z,chr);Cy(4,8,LX0+4,4940,z+64,chr)});
+  // ручки-рычаги с розетками, по обе стороны
+  [[4885,-1,blk],[4933,1,chr]].forEach(([y,sg,m])=>{
+    Cy(28,9,HX,y+sg*4.5,1000,m,'y');Cy(9,38,HX,y+sg*23,1000,m,'y');
+    D(HX-150,Math.min(y+sg*34,y+sg*48),HX+8,Math.max(y+sg*34,y+sg*48),990,1010,m);                              // рычаг к петлям
+    LK.forEach((z,k)=>{const r=k?22:16,zz=k?z:z+80;Cy(r,8,HX,y+sg*4,zz,m,'y');                               // замки: верхний и нижний над ручкой
+      D(HX-3,Math.min(y+sg*8,y+sg*9.5),HX+3,Math.max(y+sg*8,y+sg*9.5),zz-r*0.55,zz+r*0.3,lm(0x0c0c0d))});
+    Cy(13,10,6420,y+sg*5,1550,m,'y');Cy(5,2,6420,y+sg*10.5,1550,lm(0x0c0c0d),'y')});                              // глазок
+  OB.push([5920,4870,6920,4950]);
+})();
+// ---- санузлы: неподвижная сантехника по чертежу (унитазы, умывальники, ванна). Скруглённые формы: выдавливание контуров и вращение профилей; ставить мебель сквозь них нельзя
+const batG=new T.Group();scene.add(batG);
+(function(){
+  const ph=(c,s)=>new T.MeshPhongMaterial({color:c,specular:0x777777,shininess:s,side:T.DoubleSide});
+  const wh=ph(0xf8f9fb,70),sh=ph(0xeceff2,60),fm=ph(0xe4edf3,40),ch=ph(0xd6dbe1,130);
+  const rs=(w,d,r)=>{r=Math.min(r,w/2-1,d/2-1);const s=new T.Shape(),x=-w/2,y=-d/2;s.moveTo(x+r,y);s.lineTo(x+w-r,y);s.quadraticCurveTo(x+w,y,x+w,y+r);s.lineTo(x+w,y+d-r);s.quadraticCurveTo(x+w,y+d,x+w-r,y+d);s.lineTo(x+r,y+d);s.quadraticCurveTo(x,y+d,x,y+d-r);s.lineTo(x,y+r);s.quadraticCurveTo(x,y,x+r,y);return s};
+  const el=(rx,ry)=>{const s=new T.Shape();s.absellipse(0,0,rx,ry,0,Math.PI*2,false,0);return s};
+  const ext=(s,h,b)=>{const g=new T.ExtrudeGeometry(s,{depth:Math.max(h-2*b,1),bevelEnabled:true,bevelThickness:b,bevelSize:b,bevelSegments:3,curveSegments:12});g.rotateX(-Math.PI/2);g.translate(0,b,0);g.scale(M,M,M);return g};
+  const rb=(w,d,h,r,b=6)=>ext(rs(w-2*b,d-2*b,r),h,b);
+  const cylG=(rt,rb2,h)=>{const g=new T.CylinderGeometry(rt*M,rb2*M,h*M,20);g.translate(0,h*M/2,0);return g};
+  const lathe=pts=>new T.LatheGeometry(pts.map(p=>new T.Vector2(p[0],p[1])),28);
+  const pt=(g,m,x,y,z,ry=0)=>{const o=new T.Mesh(g,m);o.position.set(x*M,z*M,-y*M);o.rotation.y=ry;o.castShadow=o.receiveShadow=true;batG.add(o);return o};
+  const tap=(x,y,z,th)=>{const g=new T.Group(),b=new T.Mesh(cylG(24,24,40),ch),s=new T.Mesh(cylG(11,11,90),ch),p=new T.Mesh(cylG(9,9,110),ch);
+    s.position.y=40*M;p.rotation.x=-Math.PI/2;p.position.y=125*M;g.add(b,s,p);g.position.set(x*M,z*M,-y*M);g.rotation.y=th;g.traverse(o=>o.castShadow=true);batG.add(g)};
+  const toilet=cx=>{
+    pt(rb(380,190,430,45,16),wh,cx,195,390);                 // бачок
+    pt(rb(396,206,26,48,8),sh,cx,195,820);                   // крышка бачка
+    pt(cylG(26,26,8),ch,cx,195,846);                          // кнопка смыва
+    pt(lathe([[0,0],[.10,0],[.145,.04],[.172,.15],[.183,.30],[.187,.405],[0,.405]]),wh,cx,470,0).scale.z=265/187; // чаша
+    pt(ext(el(184,262),16,6),sh,cx,470,400);                 // кольцо сиденья
+    pt(ext(el(172,250),26,8),wh,cx,470,418);                 // крышка сиденья
+    OB.push([cx-200,100,cx+200,740]);
+  };
+  const sink=cx=>{
+    pt(cylG(52,66,770),wh,cx,215,0);                         // колонна
+    const o=rs(584,434,140);o.holes.push(rs(470,330,115));
+    pt(ext(o,125,8),wh,cx,325,765);                           // чаша с отверстием
+    pt(rb(476,336,10,115,3),fm,cx,325,805);                  // дно чаши
+    tap(cx,150,890,0);OB.push([cx-300,100,cx+300,550]);
+  };
+  toilet(4240);                                               // санузел: унитаз
+  pt(cylG(55,65,780),wh,4890,360,0);                          // угловая раковина: колонна и круглая чаша
+  pt(lathe([[0,.77],[.12,.775],[.2,.80],[.235,.84],[.236,.89],[.226,.895],[.216,.89],[.2,.862],[.12,.835],[0,.83]]),wh,4890,360,0);
+  tap(5025,225,892,Math.PI/4);OB.push([4660,130,5120,590]);
+  const tb=rs(684,1684,125);tb.holes.push(rs(540,1540,170));  // ванна: полый корпус, дно, слив, смеситель
+  pt(ext(tb,560,8),wh,5580,950,0);pt(rb(540,1540,10,170,3),fm,5580,950,140);pt(cylG(28,28,6),ch,5580,330,150);
+  tap(5580,1765,560,Math.PI);OB.push([5230,100,5930,1800]);
+  toilet(7000);                                               // ванная: унитаз
+  // тумба под раковину: шалфей, две дверцы, латунные ручки, мраморная столешница, белая чаша и смеситель
+  {const sg=lm(0x7f958f),sgD=lm(0x6c807a),br=new T.MeshPhongMaterial({color:0xc9a45c,specular:0xffe6a8,shininess:80}),mb=new T.MeshPhongMaterial({color:0xf3f2f0,specular:0x444444,shininess:60}),cx=6350;
+    box(cx-300,100,cx+300,540,0,120,lm(0x3a3a3c),batG);box(cx-300,100,cx+300,540,120,800,sgD,batG);[-1,1].forEach(a=>{box(cx+(a<0?-298:2),540,cx+(a<0?-2:298),556,124,796,sg,batG);box(cx+a*40-6,556,cx+a*40+6,570,560,740,br,batG)});
+    box(cx-310,100,cx+310,570,800,830,mb,batG);const o=rs(500,380,120);o.holes.push(rs(420,300,100));pt(ext(o,110,8),wh,cx,330,830);pt(rb(420,300,8,100,3),fm,cx,330,850);tap(cx,150,940,0);
+    OB.push([cx-310,100,cx+310,570])}
+  // аксессуары: чёрный металл, полотенца шалфей и коньяк, коврик, флаконы; держатели бумаги и ёршики у унитазов
+  {const bk=new T.MeshPhongMaterial({color:0x1f1f22,specular:0x555555,shininess:60}),sg=lm(0x6f9481),cg=lm(0xb8743f),ln=lm(0xf1eeea),
+     C=(r1,r2,h,x,y,z,m,rx=0)=>{const o=new T.Mesh(new T.CylinderGeometry(r1*M,r2*M,h*M,18),m);o.position.set(x*M,(z+h/2)*M,-y*M);o.rotation.x=rx;o.castShadow=true;batG.add(o);return o};
+    [5320,5780].forEach(x=>box(x-12,2040,x+12,2075,250,1100,bk,batG));for(let z=330;z<=1050;z+=120)box(5308,2045,5792,2070,z,z+18,bk,batG);   // полотенцесушитель на северной стене
+    box(5400,2010,5700,2040,560,1080,sg,batG);box(5440,1990,5660,2010,700,1080,ln,batG);
+    box(5960,650,6460,1250,0,10,sg,batG);                                                    // коврик у ванны
+    [[5300,1700,0xf1eeea,130],[5360,1700,0x6f9481,170],[5420,1700,0xb8743f,110]].forEach(([x,y,c,h])=>C(26,26,h,x,y,562,lm(c)));
+    [[3700,600],[7410,600]].forEach(([x,y])=>{box(Math.min(x,x-20),y-8,Math.max(x,x+20)+(x>5000?-20:0),y+8,700,712,bk,batG);C(55,55,110,x+(x>5000?-75:75),y,650,ln,Math.PI/2).rotation.z=Math.PI/2});
+    [[3790,260],[7320,260]].forEach(([x,y])=>{C(55,55,380,x,y,0,bk);C(8,8,120,x,y,380,bk)});
+    box(5130,780,5150,820,880,900,bk,batG);box(5115,700,5130,900,720,900,cg,batG);         // кольцо с полотенцем у раковины санузла
+    // круглые зеркала в чёрной раме и душевая стойка — только при высоких стенах
+    const hiG=new T.Group();batG.add(hiG);hiReg(hiG,1750);
+    const mir=(x,y,z,ry)=>{const f=new T.Mesh(new T.CylinderGeometry(240*M,240*M,18*M,40),bk),g=new T.Mesh(new T.CylinderGeometry(225*M,225*M,20*M,40),new T.MeshPhongMaterial({color:0xcfd8de,specular:0xffffff,shininess:120}));
+      [f,g].forEach(o=>{o.rotation.x=Math.PI/2;o.rotation.z=ry;o.position.set(x*M,z*M,-y*M);hiG.add(o)})};
+    mir(6350,112,1400,0);mir(5138,520,1400,Math.PI/2);
+    const sr=new T.Mesh(new T.CylinderGeometry(12*M,12*M,1300*M,12),bk);sr.position.set(5580*M,1350*M,-1790*M);hiG.add(sr);
+    const hd=new T.Mesh(new T.CylinderGeometry(110*M,110*M,12*M,28),bk);hd.position.set(5580*M,1980*M,-1680*M);hiG.add(hd);
+    const ar=new T.Mesh(new T.CylinderGeometry(10*M,10*M,120*M,10),bk);ar.rotation.x=Math.PI/2;ar.position.set(5580*M,1990*M,-1735*M);hiG.add(ar)}
+})();
+// ---- окна и балконная дверь: ПВХ-рамы, импосты, створки, ручки, подоконники, порог (не зависят от высоты стен)
+const winG=new T.Group();scene.add(winG);
+(function(){
+  const pv=lm(0xf3f4f6),sl=lm(0xffffff),th=lm(0xb9b4aa),ch=new T.MeshPhongMaterial({color:0xd6dbe1,specular:0x999999,shininess:120});
+  const W=(x0,y0,x1,y1,z0,z1,m=pv)=>box(x0,y0,x1,y1,z0,z1,m,winG);
+  // окна фасада по образцу: чёрная рама, три колонки; сверху высокие стёкла (боковые открываются, серые створки), снизу три низких; стекло с градиентом неба
+  const blk=lm(0x15181c),gry=lm(0x80848a);
+  [[650,2250],[3950,5550],[7300,8900]].forEach(([a,b])=>{
+    const fw=60,mw=70,z0=800,z1=2300,i0=a+fw,i1=b-fw,cw=(i1-i0-2*mw)/3,zl0=z0+fw,zl1=zl0+300,zt1=zl1+70,zu1=z1-fw;
+    const col=[0,1,2].map(k=>[i0+k*(cw+mw),i0+k*(cw+mw)+cw]);
+    W(-220,a,-150,a+fw,z0,z1,blk);W(-220,b-fw,-150,b,z0,z1,blk);W(-220,a,-150,b,z1-fw,z1,blk);W(-220,a,-150,b,z0,zl0,blk);   // рама
+    [0,1].forEach(k=>W(-220,col[k][1],-150,col[k+1][0],zl0,zu1,blk));      // вертикальные импосты
+    W(-220,i0,-150,i1,zl1,zt1,blk);                                          // горизонтальный импост
+    col.forEach(([c0,c1],k)=>{
+      W(-191,c0,-179,c1,zl0,zl1,glass);                                        // нижнее стекло
+      const sash=k!==1,g=sash?28:0;                                          // боковые верхние створки: серый контур
+      W(-191,c0+g,-179,c1-g,zt1+g,zu1-g,glass);                                // верхнее стекло
+      if(sash){W(-212,c0,-158,c0+g,zt1,zu1,gry);W(-212,c1-g,-158,c1,zt1,zu1,gry);W(-212,c0,-158,c1,zu1-g,zu1,gry);W(-212,c0,-158,c1,zt1,zt1+g,gry);
+        const hy=k===0?c1-14:c0+14;W(-158,hy-14,-146,hy+14,1660,1740,ch);W(-146,hy-8,-120,hy+8,1620,1730,ch)}   // ручка у импоста
+    });
+    W(-150,a-40,40,b+40,800,835,sl);                                         // внутренний подоконник
+  });
+  // балконная дверь в стене гостиной: стекло на оси x=13570, рама 70 мм, проём по y 2400-3700, высота 2200
+  const a=2400,b=3700,x0=13535,x1=13605,t=2200,s0=2930,s1=b-60;
+  W(13380,a,13760,b,0,25,th);                                        // порог
+  W(x0,a,x1,a+60,25,t);W(x0,b-60,x1,b,25,t);W(x0,a,x1,b,t-60,t);W(x0,a,x1,b,25,85);   // рама
+  W(x0,2870,x1,2930,85,t-60);                                        // импост: слева глухая часть, справа дверное полотно
+  W(x0,a+60,x1,b-60,1000,1050);                                      // горизонтальный ригель
+  W(x0-8,s0,x1+8,s0+45,85,t-60);W(x0-8,s1-45,x1+8,s1,85,t-60);     // контур дверного полотна
+  W(x0-8,s0,x1+8,s1,t-105,t-60);W(x0-8,s0,x1+8,s1,85,130);
+  W(13500,2960,13535,2985,960,1100,ch);W(13529,2948,13537,2997,940,1115,ch);   // ручка со стороны комнаты
+  // панорамное окно лоджии (восточная сторона) по образцу: чёрная рама, сетка 4 колонки x 3 ряда (узкий верх), прозрачное стекло
+  {const lx0=15475,lx1=15545,gx0=15504,gx1=15516,yA=820,yB=4160,fw=60,mw=70,i0=yA+fw,i1=yB-fw,cw=(i1-i0-3*mw)/4;
+   const rows=[[60,1172],[1242,2275],[2345,2640]],col=[0,1,2,3].map(k=>[i0+k*(cw+mw),i0+k*(cw+mw)+cw]);
+   W(lx0,yA,lx1,yA+fw,0,2700,blk);W(lx0,yB-fw,lx1,yB,0,2700,blk);W(lx0,yA,lx1,yB,0,60,blk);W(lx0,yA,lx1,yB,2640,2700,blk);
+   [0,1,2].forEach(k=>W(lx0,col[k][1],lx1,col[k+1][0],60,2640,blk));      // вертикальные импосты
+   [1172,2275].forEach(z=>W(lx0,i0,lx1,i1,z,z+70,blk));                     // горизонтальные импосты
+   col.forEach(([c0,c1])=>rows.forEach(([r0,r1])=>W(gx0,c0,gx1,c1,r0,r1,glass)));
+   OB.push([lx0,yA,lx1,yB]);}
+})();
+// ---------- подписи комнат
+const rr=(g,x,y,w,h,r)=>{g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath()};
+function label(t,a,x,y){
+  const c=document.createElement('canvas');c.width=300;c.height=110;const g=c.getContext('2d');
+  g.fillStyle='rgba(255,255,255,.92)';rr(g,4,4,292,102,24);g.fill();g.textAlign='center';
+  g.fillStyle='#1d1d21';g.font='700 34px Montserrat,"Segoe UI",system-ui,sans-serif';g.fillText(t,150,48);   // как на сайте ЖК: название жирным, площадь красным
+  g.fillStyle='#c1272d';g.font='600 28px Montserrat,"Segoe UI",system-ui,sans-serif';g.fillText(a,150,88);
+  const tx=new T.CanvasTexture(c);tx.encoding=T.sRGBEncoding;
+  const s=new T.Sprite(new T.SpriteMaterial({map:tx,depthTest:false,transparent:true}));
+  s.scale.set(2.0,0.73,1);s.position.set(x*M,0.2,-y*M);s.renderOrder=5;labels.add(s);
+}
+[['Спальня','18,0 м²',2400,8300],['Комната','11,5 м²',1800,5100],['Комната','11,9 м²',1800,1800],['Прихожая','10,2 м²',5500,3500],
+ ['Санузел','2,5 м²',4400,1100],['Ванная','4,4 м²',6300,1100],['Кухня','5,4 м²',9500,1450],['Гостиная','17,8 м²',11000,3000],['Лоджия','2,8 м²',14600,2500]].forEach(l=>label(...l));
+// ---------- камера
+// центр вращения: центр масс пола квартиры (она Г-образная, центр габаритов лежит в пустоте)
+let ar=0,cx=0,cy=0;FL.forEach(r=>{const a=(r[2]-r[0])*(r[3]-r[1]);ar+=a;cx+=a*(r[0]+r[2])/2;cy+=a*(r[1]+r[3])/2});
+const C=new T.Vector3(cx/ar*M,0,-cy/ar*M),CT=new T.Vector3(7.6,0,-5); // C: вращение в 3D, CT: центр габаритов для вида сверху
+const controls=new T.OrbitControls(camera,renderer.domElement);
+controls.enableDamping=true;controls.maxPolarAngle=Math.PI/2-0.04;controls.minDistance=3;controls.maxDistance=70;controls.target.copy(C);
+ocam.position.set(CT.x,40,CT.z);
+const oc=new T.OrbitControls(ocam,renderer.domElement);
+oc.enableRotate=false;oc.enableDamping=true;oc.enabled=false;oc.target.copy(CT);oc.minZoom=0.6;oc.maxZoom=6;
+oc.mouseButtons.LEFT=T.MOUSE.PAN;oc.touches.ONE=T.TOUCH.PAN;
+function viewPos(){const a=camera.aspect,d=Math.max(21/(K*a),13.4/K);return C.clone().add(new T.Vector3(-0.2,0.72,0.66).normalize().multiplyScalar(d))}
+let anim=null;
+// системная палитра телефона закрывает нижние две трети экрана: на это время вид сдвигается так, чтобы выбранный предмет был вверху окна 3D,
+// iOS присылает «изменено» и «потерян фокус» прямо во время выбора, поэтому закрытие палитры не ловим: вид остаётся сдвинутым,
+// плавно возвращается по «Готово» или при выборе другого предмета, а если человек сам начал крутить вид — просто остаётся как есть.
+// Сдвиг только по горизонтали (по полу), наклон и масштаб не меняются
+const FOCUS_Y=0.68,FOCUS_MS=350,FOCUS_ITER=4;let focusSaved=null;
+function panTo(cam,ctl,p1,t1){const p0=cam.position.clone(),t0=ctl.target.clone(),s0=performance.now();
+  anim=now=>{const k=Math.min(1,(now-s0)/FOCUS_MS),e=k*k*(3-2*k);cam.position.lerpVectors(p0,p1,e);ctl.target.lerpVectors(t0,t1,e);return k<1}}
+function focusSel(on){
+  const cam=cur,ctl=ac();
+  if(!on){if(!focusSaved)return;const f=focusSaved;focusSaved=null;if(f.cam===cam)panTo(cam,ctl,f.p,f.t);return}
+  if(!sel||focusSaved)return;
+  cam.updateMatrixWorld();const P=new T.Vector3(sel.x*M,sel.h/2*M,-sel.y*M),c2=cam.clone(),S=new T.Vector3();
+  const rt=new T.Vector3().setFromMatrixColumn(cam.matrixWorld,0),up=new T.Vector3().setFromMatrixColumn(cam.matrixWorld,1),fw=new T.Vector3().setFromMatrixColumn(cam.matrixWorld,2).negate();
+  const uh=new T.Vector3(up.x,0,up.z),k=uh.lengthSq()?uh.normalize().dot(up):0;if(k<0.2)return;   // камера смотрит почти горизонтально: сдвиг по полу не поднимет предмет
+  const rh=new T.Vector3(rt.x,0,rt.z).normalize();
+  for(let i=0;i<FOCUS_ITER;i++){   // у наклонной камеры сдвиг по полу меняет и глубину, поэтому уточняем несколько раз
+    c2.position.copy(cam.position).add(S);c2.updateMatrixWorld();const q=P.clone().project(c2);
+    let hh,hw;if(cam.isPerspectiveCamera){hh=P.clone().sub(c2.position).dot(fw)*Math.tan(cam.fov*Math.PI/360);hw=hh*cam.aspect}else{hh=(cam.top-cam.bottom)/2/cam.zoom;hw=(cam.right-cam.left)/2/cam.zoom}
+    S.add(rh.clone().multiplyScalar(q.x*hw)).add(uh.clone().multiplyScalar((q.y-FOCUS_Y)*hh/k))}
+  const sh=S;
+  focusSaved={cam,p:cam.position.clone(),t:ctl.target.clone()};panTo(cam,ctl,cam.position.clone().add(sh),ctl.target.clone().add(sh))}
+function fitTop(){const a=camera.aspect,hv=Math.max(11.5,17.5/a);ocam.left=-hv*a/2;ocam.right=hv*a/2;ocam.top=hv/2;ocam.bottom=-hv/2;ocam.zoom=1;ocam.updateProjectionMatrix()}
+function go(n){
+  const top=n==='top',wasTop=cur===ocam;
+  $('v3d').setAttribute('aria-pressed',!top);$('vtop').setAttribute('aria-pressed',top);
+  controls.enabled=!top;oc.enabled=top;anim=null;
+  if(top){cur=ocam;ocam.position.set(CT.x,40,CT.z);oc.target.copy(CT);fitTop();oc.update();return}
+  cur=camera;
+  if(wasTop){camera.position.copy(viewPos());controls.target.copy(C);return}
+  const f=camera.position.clone(),ft=controls.target.clone(),t=viewPos(),t0=performance.now();
+  anim=now=>{const k=Math.min(1,(now-t0)/450),e=k*k*(3-2*k);camera.position.lerpVectors(f,t,e);controls.target.lerpVectors(ft,C,e);return k<1};
+}
+function resize(){const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();if(cur===ocam)fitTop()}
+new ResizeObserver(resize).observe(stage);resize();
+camera.position.copy(viewPos());
+$('v3d').onclick=()=>go('iso');$('vtop').onclick=()=>go('top');
+const tog=(id,fn)=>{const b=$(id);b.onclick=()=>{const on=b.getAttribute('aria-pressed')!=='true';b.setAttribute('aria-pressed',on);fn(on)}};
+let lt=0,lf=0; // подписи комнат: показываются при открытии и через 5 с плавно скрываются; кнопка «Названия комнат» включает их снова
+function fadeLabels(){
+  const id=++lf,t0=performance.now();
+  (function f(n){if(id!==lf)return;const k=Math.min(1,(n-t0)/600);labels.children.forEach(s=>s.material.opacity=1-k);
+    if(k<1){requestAnimationFrame(f);return}
+    labels.visible=false;labels.children.forEach(s=>s.material.opacity=1);$('tl').setAttribute('aria-pressed','false')})(t0);
+}
+// «Сбросить ремонт»: все перегородки (новые и сдвинутые исходные) убираются, исходные стены с проёмами встают на место, пол — как в квартире. Мебель не трогаем
+$('resetR').onclick=()=>{pushHist('сброс ремонта');if(drag){drag.ctl.enabled=true;drag=null}
+  items.filter(i=>i.c.wall).forEach(i=>{furn.remove(i.g);items.splice(items.indexOf(i),1)});if(sel&&!items.includes(sel))select(null);
+  addOrig();$('demo').setAttribute('aria-pressed',false);if(floorKey!=='base')setFloor('base');
+  say('Ремонт сброшен: стены, проёмы и пол как в квартире изначально. Отменить — стрелка «Назад»')};
+$('demo').onclick=()=>setDemo($('demo').getAttribute('aria-pressed')!=='true');
+tog('tl',on=>{clearTimeout(lt);lf++;labels.visible=on;labels.children.forEach(s=>s.material.opacity=1)});
+lt=setTimeout(fadeLabels,5000);
+tog('td',on=>{doorsOn=on;buildLeaves();items.forEach(i=>i.dr&&build(i));say(on?'Двери показаны. Открыть дверь: выберите стену с проёмом и нажмите кнопку с дверью; двери санузлов открываются нажатием':'Двери скрыты, проёмы открыты')});
+// прозрачность стен: меняется материал стен; окна и двери не затрагиваются, тень от почти невидимых стен отключается
+// под исходными межкомнатными стенами (они теперь перегородки) всегда лежит пол
+[[0,3420,3590,3500],[0,6690,3590,6770],[3590,2300,3670,6770],[4570,4870,5150,4950]].forEach(r=>{FL.push(r);box(r[0],r[1],r[2],r[3],-60,0,MAT.wood,floor)});
+function setWallOpacity(op){
+  wallOp=op;['ext','part','wet','shaft','leaf','lhd'].forEach(k=>{const m=MAT[k];m.transparent=op<1;m.opacity=op;m.depthWrite=op>=1;m.needsUpdate=true});
+  walls.traverse(o=>{if(o.isMesh)o.castShadow=op>0.6&&o.material!==glass});
+  items.forEach(i=>i.c.wall&&opApply(i));
+}
+$('wo').oninput=e=>{const t=+e.target.value;$('vO').textContent=t+'%';setWallOpacity(1-t/100)};
+let wq=0;$('wh').oninput=e=>{const v=+e.target.value;$('vH').textContent=v/10+' см';cancelAnimationFrame(wq);wq=requestAnimationFrame(()=>{buildWalls(v);items.forEach(i=>i.c.wall&&build(i));HIGH.forEach(([o,t])=>o.visible=v>=t);window.kitSplash&&kitSplash(v)})};
+$('stage').addEventListener('pointerdown',()=>{hintEl.style.display='none'},{once:true});
+// ---------- КАТАЛОГ МЕБЕЛИ
+// Чтобы подключить модель: положите файл в models/ под именем из поля file.
+// Размеры w, d, h (мм) и границы min/max для ползунков задаются здесь. Модель масштабируется под эти размеры.
+// У модели: ось Y вверх, ширина по X, глубина по Z, единицы и начало координат любые.
+// Размеры присланных моделей: типовые для мебели (сами файлы на 10–25% крупнее, модель подгоняется под w, d, h).
+// ry: поворот модели вокруг вертикали в градусах, если в файле она смотрит не вперёд (+Z). Модели из присланного набора стоят первыми в своих категориях
+const CATALOG=[
+  {id:'table_oak',cat:'tables',name:'Стол графитовый',w:1600,d:900,h:750,min:[1200,750],max:[2400,1100],file:'models/table_oak.glb',hr:[600,1100],build:buildTable},
+  {id:'table_cone',cat:'tables',name:'Круглый стол светлый',w:1100,d:1100,h:750,min:[900,900],max:[1300,1300],file:'models/table_cone.glb',hr:[600,1100],build:buildTable},
+  {id:'table_round',cat:'tables',name:'Круглый столик с латунью',w:800,d:800,h:480,min:[600,600],max:[1000,1000],file:'models/table_round.glb',hr:[300,700],build:buildTable},
+  {id:'table_marble',cat:'tables',name:'Стол мраморный',w:1800,d:900,h:750,min:[1400,800],max:[2400,1100],hr:[600,1100],build:buildMarble},
+  {id:'desk_pc',cat:'tables',name:'Компьютерный стол',w:1400,d:700,h:1250,min:[1000,600],max:[2000,800],hr:[650,1100],hOff:500,build:buildDesk},
+  {id:'coffee_oak',cat:'tables',name:'Журнальный столик дубовый',w:1200,d:600,h:450,min:[900,500],max:[1500,800],hr:[300,700],build:buildCoffeeOak},
+  {id:'table',cat:'tables',name:'Обеденный стол',w:1400,d:800,h:750,min:[1000,600],max:[2200,1100],file:'models/table.glb',hr:[600,1100],build:buildTable},
+  {id:'chair_walnut',cat:'chairs',name:'Стул орех с синим сиденьем',w:470,d:535,h:800,min:[420,480],max:[560,620],file:'models/chair_walnut.glb',build:buildChair,tuck:true},
+  {id:'chair_cognac',cat:'chairs',name:'Стул коньячный',w:540,d:580,h:880,min:[460,500],max:[650,700],file:'models/chair_cognac.glb',ry:180,build:buildChair,tuck:true},
+  {id:'chair_shell',cat:'chairs',name:'Стул-ракушка',w:560,d:500,h:780,min:[460,420],max:[680,600],file:'models/chair_shell.glb',build:buildChair,tuck:true},
+  {id:'chair_green',cat:'chairs',name:'Полукресло зелёное',w:580,d:570,h:830,min:[500,500],max:[700,700],file:'models/chair_green.glb',build:buildChair2,tuck:true},
+  {id:'stool',cat:'chairs',name:'Табурет',w:350,d:350,h:450,min:[250,250],max:[500,500],file:'models/stool.glb',build:buildStool,tuck:true},
+  {id:'armchair_cognac',cat:'armchairs',name:'Кресло коньячное',w:850,d:850,h:900,min:[720,720],max:[1000,1000],file:'models/armchair_cognac.glb',build:buildArmchair},
+  {id:'armchair_green',cat:'armchairs',name:'Кресло зелёное с подушкой',w:860,d:840,h:940,min:[740,720],max:[1000,980],file:'models/armchair_green.glb',build:buildArmchair},
+  {id:'armchair_wood',cat:'armchairs',name:'Кресло на деревянной раме',w:720,d:860,h:900,min:[620,760],max:[880,1000],file:'models/armchair_wood.glb',build:buildArmchair},
+  {id:'sofa_teal',cat:'sofas',name:'Диван бирюзовый с валиками',w:1900,d:790,h:910,min:[1600,700],max:[2300,950],file:'models/sofa_teal.glb',build:buildSofa},
+  {id:'sofa_classic',cat:'sofas',name:'Диван классический с подушками',w:2400,d:900,h:940,min:[1900,800],max:[2900,1100],file:'models/sofa_classic.glb',build:buildSofa},
+  {id:'sofa_3',cat:'sofas',name:'Диван трёхместный',w:2200,d:900,h:900,min:[1800,800],max:[2800,1100],file:'models/sofa_3.glb',build:buildSofa},
+  {id:'wardrobe_oak',cat:'wardrobes',name:'Шкаф дуб с графитом',w:1600,d:580,h:2200,min:[1200,500],max:[2400,650],hr:[1800,2700],build:buildWardrobeOak},
+  {id:'wardrobe_mirror',cat:'wardrobes',name:'Шкаф с зеркалом и антресолями',w:1800,d:600,h:2500,min:[1400,500],max:[2400,650],hr:[1800,2700],build:buildWardrobeMirror},
+  {id:'wardrobe_white',cat:'wardrobes',name:'Шкаф белый с антресолями',w:1600,d:600,h:2450,min:[1200,500],max:[2400,650],hr:[1800,2700],build:buildWardrobeWhite},
+  {id:'bookcase',cat:'wardrobes',name:'Стеллаж для книг',w:2000,d:350,h:2200,min:[1400,300],max:[2600,450],hr:[1000,2700],build:buildBookcase},
+  {id:'wardrobe',cat:'wardrobes',name:'Шкаф',w:1200,d:600,h:2100,min:[800,400],max:[2400,700],file:'models/wardrobe.glb',hr:[1800,2700],build:buildWardrobe},
+  {id:'bed_green',cat:'beds',name:'Кровать с зелёным изголовьем',w:2200,d:2250,h:1100,min:[1900,2100],max:[2800,2400],file:'models/bed_green.glb',build:buildBed},
+  {id:'bed_panel',cat:'beds',name:'Кровать с панелью',w:2125,d:2205,h:840,min:[1600,1900],max:[2600,2400],file:'models/bed_panel.glb',ry:-90,tintName:'base',build:buildBed},
+  {id:'bed_single',cat:'beds',name:'Кровать односпальная',w:1360,d:2170,h:990,min:[1100,1950],max:[1600,2300],file:'models/bed_single.glb',build:buildSingleBed},
+  {id:'kidsbed',cat:'beds',name:'Детская кровать-домик',w:980,d:1780,h:1650,min:[880,1680],max:[1080,2080],build:buildKidsBed},
+  {id:'nightstand',cat:'cabinets',name:'Тумбочка',w:400,d:400,h:500,min:[300,300],max:[600,500],file:'models/nightstand.glb',hr:[350,800],build:buildNightstand},
+  {id:'dresser',cat:'cabinets',name:'Комод',w:900,d:450,h:850,min:[600,350],max:[1600,600],file:'models/dresser.glb',hr:[600,1300],build:buildDresser},
+  {id:'tv_fluted',cat:'cabinets',name:'ТВ-тумба белая с рифлением',w:1800,d:420,h:1330,min:[1400,350],max:[2400,500],hr:[400,900],hOff:740,build:buildTvFluted},
+  {id:'tv',cat:'cabinets',name:'ТВ с тумбой',w:1500,d:400,h:1200,min:[1000,300],max:[2200,500],file:'models/tv.glb',hr:[350,800],hOff:750,build:buildTV},
+  {id:'rug_berber',cat:'rugs',name:'Ковёр берберский',w:2000,d:1400,h:10,min:[1200,800],max:[3500,2500],build:it=>buildRug(it,'berber'),rug:true},
+  {id:'rug_green',cat:'rugs',name:'Ковёр с бордюром',w:2400,d:1700,h:10,min:[1200,800],max:[3500,2500],build:it=>buildRug(it,'border'),rug:true},
+  {id:'rug_round',cat:'rugs',name:'Круглый джутовый ковёр',w:1600,d:1600,h:10,min:[1000,1000],max:[2400,2400],build:it=>buildRug(it,'round'),rug:true,round:true},
+  {id:'rack',cat:'hall',name:'Вешалка напольная',w:1000,d:450,h:1700,min:[600,400],max:[1600,550],build:buildRack},
+  {id:'shoecab',cat:'hall',name:'Обувница',w:900,d:300,h:1050,min:[600,240],max:[1400,380],build:buildShoeCab}
+];
+const CATS=[['tables','Столы'],['chairs','Стулья'],['sofas','Диваны'],['armchairs','Кресла'],['wardrobes','Шкафы'],['beds','Кровати'],['cabinets','Комоды и тумбы'],['rugs','Ковры'],['hall','Прихожая']];
+const S='<svg viewBox="0 0 48 34">',ICON={
+  tables:S+'<rect x="5" y="9" width="38" height="5" rx="1"/><path d="M9 14v15M39 14v15"/></svg>',
+  sofas:S+'<path d="M8 14h32v10H8zM10 14v-4h28v4M5 17v9M43 17v9"/></svg>',
+  wardrobes:S+'<rect x="12" y="3" width="24" height="28" rx="1"/><path d="M24 3v28M20 16v3M28 16v3"/></svg>',
+  beds:S+'<rect x="5" y="16" width="38" height="10" rx="1"/><path d="M5 26v3M43 26v3M5 16V8h8v8M9 16h26"/></svg>',
+  armchairs:S+'<path d="M12 12a8 8 0 0 1 24 0v8H12zM7 16h6v11H7zM35 16h6v11h-6zM13 20h22v7H13zM14 27v4M34 27v4"/></svg>',
+  chair2:S+'<circle cx="24" cy="9" r="3"/><path d="M16 3h16v14H16zM14 17h20v4H14zM16 21l-3 11M32 21l3 11"/></svg>',
+  chairs:S+'<path d="M16 4v26M16 18h16v12M32 18V4M16 4h16"/></svg>',
+  cabinets:S+'<rect x="8" y="14" width="32" height="15" rx="1"/><path d="M8 21h32M24 14v15M14 4h20v10"/></svg>',
+  dresser:S+'<rect x="8" y="8" width="32" height="22" rx="1"/><path d="M8 15h32M8 23h32M20 11.5h8M20 19h8M20 26.5h8"/></svg>',
+  stool:S+'<ellipse cx="24" cy="9" rx="12" ry="4"/><path d="M15 12l-3 18M33 12l3 18M24 13v17"/></svg>',
+  nightstand:S+'<rect x="13" y="6" width="22" height="24" rx="1"/><path d="M13 18h22M20 12h8M20 24h8"/></svg>',
+  tv:S+'<rect x="8" y="3" width="32" height="17" rx="1"/><path d="M24 20v4M17 24h14M6 27h36v4H6z"/></svg>',
+  desk_pc:S+'<rect x="4" y="17" width="40" height="3" rx="1"/><path d="M7 20v11M41 20v11M24 13v4M19 17h10"/><rect x="14" y="3" width="20" height="10" rx="1"/><rect x="30" y="21" width="8" height="9" rx="1"/></svg>',
+  bookcase:S+'<rect x="8" y="3" width="32" height="28" rx="1"/><path d="M18 3v28M30 3v28M8 12h32M8 21h32M11 9v3M13 8v4M21 17v4M33 26v5M35 27v4"/></svg>',
+  rugs:S+'<rect x="7" y="8" width="34" height="18" rx="1"/><rect x="12" y="12" width="24" height="10"/><path d="M4 10v14M44 10v14"/></svg>',
+  hall:S+'<path d="M10 4h28M12 4v25M36 4v25M7 29h10M31 29h10M20 4v3l-5 6h10l-5-6M30 4v3"/></svg>',
+  shoecab:S+'<rect x="9" y="5" width="30" height="21" rx="1"/><path d="M9 15.5h30M20 9h8M20 19.5h8M13 26v4M35 26v4"/></svg>',
+  kidsbed:S+'<path d="M9 31V15L24 4l15 11v16M9 23h30M9 31h30M13 23v-4h9v4"/></svg>'};
+let cat='tables'; // первая категория открыта по умолчанию; в каждой категории может быть несколько вариантов
+// превью для карточек без фото: сама модель (встроенная или GLB), нарисованная отдельным маленьким рендерером; результат кэшируется
+let TR=null;const TH={},NOPH=new Set();   // NOPH: у этих карточек нет фото, показываем нарисованное превью
+function outlined(src){ // превью на белом фоне с серой обводкой по контуру: так видна и белая мебель
+  const n=src.width,sil=document.createElement('canvas'),out=document.createElement('canvas');sil.width=out.width=n;sil.height=out.height=n;
+  const s=sil.getContext('2d');s.drawImage(src,0,0);s.globalCompositeOperation='source-in';s.fillStyle='#aeb4bc';s.fillRect(0,0,n,n);
+  const g=out.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,n,n);
+  for(let a=0;a<8;a++)g.drawImage(sil,Math.round(Math.cos(a*Math.PI/4)*2),Math.round(Math.sin(a*Math.PI/4)*2));   // контур толщиной 2 пикс
+  g.drawImage(src,0,0);return out.toDataURL('image/png')}
+function thumbFor(c){
+  if(c.id in TH)return TH[c.id];
+  try{
+    if(!TR){const r=new T.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true});r.setSize(256,256);r.outputEncoding=T.sRGBEncoding;r.setClearColor(0xffffff,0);
+      const sc=new T.Scene(),dl=new T.DirectionalLight(0xffffff,0.75);sc.add(new T.HemisphereLight(0xffffff,0xb9b2aa,0.85));dl.position.set(2,4,3);sc.add(dl);
+      TR={r,sc,cam:new T.PerspectiveCamera(30,1,0.01,50)}}
+    const it={c,w:c.w,d:c.d,h:c.h,rot:0,x:0,y:0,g:new T.Group(),mats:[]};build(it);TR.sc.add(it.g);
+    const b=new T.Box3().setFromObject(it.g),ct=b.getCenter(new T.Vector3()),rad=b.getSize(new T.Vector3()).length()/2;
+    TR.cam.position.copy(ct).addScaledVector((c.rug?new T.Vector3(0.35,1.6,0.8):new T.Vector3(0.75,0.55,1)).normalize(),rad/Math.sin(15*Math.PI/180)*1.02);TR.cam.lookAt(ct);   // спереди-справа, сверху
+    TR.r.render(TR.sc,TR.cam);TH[c.id]=outlined(TR.r.domElement);TR.sc.remove(it.g);
+  }catch(e){TH[c.id]=''}
+  return TH[c.id];
+}
+function cardImg(img,id){NOPH.add(id);const c=CATALOG.find(x=>x.id===id),t=c&&!(c.file&&!c.model&&!c.build)?thumbFor(c):'';img.onerror=null;if(t)img.src=t;else img.remove()}
+function renderCards(){
+  $('catTitle').textContent=(CATS.find(c=>c[0]===cat)||[])[1]||'';
+  $('chips').innerHTML=CATS.map(([k,n])=>`<button class="chip" data-k="${k}" aria-pressed="${k===cat}">${n}</button>`).join('');
+  $('cards').innerHTML=CATALOG.filter(c=>cat==='all'||c.cat===cat).map(c=>{const ok=!!(c.model||c.build);
+    return `<button class="card" data-id="${c.id}" aria-pressed="${placeMode===c}" ${ok?'':'disabled'} title="${ok?c.name:'Положите '+c.file+', карточка включится сама'}" aria-label="${c.name}"><span class="thumb"><img src="${NOPH.has(c.id)&&TH[c.id]?TH[c.id]:'images/'+c.id+'.jpg'}" alt="" loading="lazy" onerror="cardImg(this,'${c.id}')">${ICON[c.id]||ICON[c.cat]}</span><span>${c.name}</span><small>${ok?c.w/10+' × '+c.d/10+' см':'Скоро'}</small></button>`}).join('');
+}
+$('chips').onclick=e=>{const b=e.target.closest('.chip');if(b){cat=b.dataset.k;renderCards()}};
+$('cards').onclick=e=>{if(cdJust){cdJust=false;return}const b=e.target.closest('.card');if(b&&!b.disabled){const c=CATALOG.find(c=>c.id===b.dataset.id);setPlace(placeMode===c?null:c)}};
+// ---- перетаскивание карточки прямо в квартиру (второй способ; первый — нажать карточку, потом пол — остаётся).
+// Мышь: зажать и повести. Палец: подержать CD_HOLD_MS (иначе это прокрутка ряда карточек), затем вести.
+// Над окном 3D на полу едет сам предмет, красный — не помещается; отпустили над квартирой — предмет встаёт. CARD_DRAG=false выключает всё это
+const CARD_DRAG=true,CD_HOLD_MS=450,CD_MOVE=8,CD_SLOP=10;
+let cd=null,cdJust=false;
+function cdEnd(drop){if(!cd)return;const c=cd;cd=null;clearTimeout(c.tm);c.card.classList.remove('lifted');if(c.ghost)c.ghost.remove();
+  if(c.prev){scene.remove(c.prev.g)}
+  if(!c.on)return;cdJust=true;setTimeout(()=>cdJust=false,400);   // клик после перетаскивания не включает режим «нажмите на пол»
+  if(drop&&c.at){if(placeMode)setPlace(null);addItem(c.c,c.at)}else if(drop)say('Перетащите карточку на пол квартиры')}
+function cdStart(){const c=cd;if(!c||c.on)return;c.on=true;c.card.classList.add('lifted');if(navigator.vibrate)navigator.vibrate(15);
+  const im=c.card.querySelector('.thumb img'),g=document.createElement('div');g.className='cdghost';if(im)g.appendChild(im.cloneNode());else g.textContent=c.c.name;document.body.appendChild(g);c.ghost=g;cdMove(c.x,c.y)}
+function cdMove(x,y){const c=cd;if(!c||!c.on)return;c.ghost.style.transform=`translate(${x}px,${y}px)`;
+  const r=renderer.domElement.getBoundingClientRect(),over=x>=r.left&&x<=r.right&&y>=r.top&&y<=r.bottom;c.at=null;
+  if(over){setNdc({clientX:x,clientY:y});const p=new T.Vector3();
+    if(ray.ray.intersectPlane(new T.Plane(new T.Vector3(0,1,0),0),p)&&inFloor(p.x/M,-p.z/M)){
+      if(!c.prev){c.prev={c:c.c,w:c.c.w,d:c.c.d,h:c.c.h,rot:0,x:0,y:0,g:new T.Group(),mats:[]};build(c.prev);scene.add(c.prev.g)}
+      const px=p.x/M,py=-p.z/M;put(c.prev,px,py);c.prev.g.visible=true;paint(c.prev,!valid(c.prev,px,py));c.at=[px,py]}}
+  if(c.prev&&!c.at)c.prev.g.visible=false;c.ghost.style.opacity=c.at?0:1}
+if(CARD_DRAG){
+  $('cards').addEventListener('pointerdown',e=>{const b=e.target.closest('.card');if(!b||b.disabled||e.button>0)return;cdEnd(false);
+    cd={card:b,c:CATALOG.find(q=>q.id===b.dataset.id),x:e.clientX,y:e.clientY,x0:e.clientX,y0:e.clientY,touch:e.pointerType!=='mouse',on:false};
+    if(cd.touch)cd.tm=setTimeout(cdStart,CD_HOLD_MS)});
+  addEventListener('pointermove',e=>{if(!cd)return;cd.x=e.clientX;cd.y=e.clientY;const d=Math.hypot(e.clientX-cd.x0,e.clientY-cd.y0);
+    if(!cd.on){if(cd.touch){if(d>CD_SLOP)cdEnd(false)}else if(d>CD_MOVE)cdStart();return}   // палец сдвинулся раньше времени — это прокрутка
+    e.preventDefault();cdMove(e.clientX,e.clientY)},{passive:false});
+  addEventListener('touchmove',e=>{if(cd&&cd.on)e.preventDefault()},{passive:false});   // пока тащим карточку, страница и ряд карточек не прокручиваются
+  addEventListener('pointerup',()=>cdEnd(true));addEventListener('pointercancel',()=>cdEnd(false));
+  $('cards').addEventListener('contextmenu',e=>e.preventDefault());   // долгое нажатие не открывает системное меню картинки
+  $('cards').addEventListener('dragstart',e=>e.preventDefault());   // браузер не тащит саму картинку вместо нашего перетаскивания
+}
+// добавление мебели: карточка включает режим, затем короткое нажатие на пол ставит предмет в эту точку (или в ближайшее свободное место рядом). Камеру в режиме вращать можно
+let placeMode=null;
+function setPlace(c){placeMode=c;if(c&&doorMode)setDoorMode(false);stage.style.cursor=c?'crosshair':'';document.querySelectorAll('#cards .card').forEach(b=>b.setAttribute('aria-pressed',!!c&&b.dataset.id===c.id));if(c)say('Нажмите на пол там, куда поставить: '+c.name.toLowerCase())}
+const GL=T.GLTFLoader?new T.GLTFLoader():null;
+// в опубликованном артефакте файлы .glb лежат как его вложения (/_blob/...); локально грузятся из models/
+const ART_BLOB={table_oak:'882b733a64f63e4c55211d5c08acd19a',table_cone:'9d4b6c22a6675035839247c738429695',table_round:'bc99e75cb6f3f7d69b9b401fe3edb23d',
+  chair_cognac:'4b87d600e5f901203004ab4a76cbcf07',chair_shell:'01b3567f9b487571e59a1bd7be675144',chair_green:'fabd8f4e0074e8fdadaec958b381f990',
+  armchair_wood:'e9898a3dbd508dbb446451157d1d859b',sofa_3:'d6835a3f2b61506c3723aa8ed208c2e9',bed_green:'c1426354ce0876535e331b97892bf988',bed_panel:'7e8e1ab50e076a89abeb67052083f36d',
+  armchair_cognac:'67211f8eb2877b736f6c8020770323d2',armchair_green:'61302244b99df0f9096e60a1e93ad9be',sofa_classic:'3a29a0ad893302dfad5a8164d940081d',chair_walnut:'00a8b679ce6a6a9cdfc884698106f82c',sofa_teal:'0eace0fd32bca8ba13bd05a621867b78',bed_single:'6dd6d0432244dc66955843f7a3dbed91'};
+function loadModel(c,url=c.file){return new Promise(res=>{if(!GL)return res(null);GL.load(url,g=>{const s=new T.Group();s.add(g.scene);s.rotation.y=(c.ry||0)*Math.PI/180;
+  s.traverse(o=>{if(o.isMesh)[].concat(o.material).forEach(m=>{if(m.metalness>0.4)m.metalness=0.4})});   // без карты окружения металл выглядел бы чёрным
+  const b=new T.Box3().setFromObject(s),sz=new T.Vector3(),ct=new T.Vector3();
+  b.getSize(sz);b.getCenter(ct);res(sz.x>0&&sz.y>0&&sz.z>0?{s,min:b.min.clone(),ct,sz}:null)},undefined,()=>res(url===c.file&&ART_BLOB[c.id]?loadModel(c,'/_blob/'+ART_BLOB[c.id]):null))})}
+renderCards();
+CATALOG.forEach(c=>c.file&&loadModel(c).then(m=>{if(m){c.model=m;renderCards();items.filter(i=>i.c===c).forEach(build)}}));   // уже расставленные предметы получают загруженную модель
+// ---------- мебель на плане
+const furn=new T.Group();scene.add(furn);
+const items=[],GRID=[];
+for(let x=0;x<=15500;x+=150)for(let y=100;y<=9800;y+=150)GRID.push([x,y]);
+let sel=null,drag=null,down=null,tmr=0,leafTap=null;
+const ray=new T.Raycaster(),ndc=new T.Vector2(),hintEl=$('hint');
+function say(s){hintEl.textContent=s;hintEl.style.display='block';clearTimeout(tmr);tmr=setTimeout(()=>hintEl.style.display='none',3500)}
+const ac=()=>cur===ocam?oc:controls;
+const rect=(it,x,y)=>{if(it.fa){const P=poly(it,x,y),X=P.map(p=>p[0]),Y=P.map(p=>p[1]);return[Math.min(...X),Math.min(...Y),Math.max(...X),Math.max(...Y)]}   // у наклонного — описанный прямоугольник
+  const o=it.rot&1,hw=(o?it.d:it.w)/2,hd=(o?it.w:it.d)/2;return[x-hw,y-hd,x+hw,y+hd]};
+const hit2=(a,b)=>a[0]<b[2]-1&&a[2]>b[0]+1&&a[1]<b[3]-1&&a[3]>b[1]+1;
+const inR=(f,px,py)=>px>=f[0]-1&&px<=f[2]+1&&py>=f[1]-1&&py<=f[3]+1;
+const inFloor=(px,py,w)=>FL.some(f=>inR(f,px,py))||(w&&FLP.some(f=>inR(f,px,py)));
+// ---- поворот мебели на любой угол: it.rot — четверти (0..3), it.fa — добавка внутри четверти в градусах (0..85, шаг ANG_STEP).
+// Общий угол по часовой стрелке на плане: rot*90+fa. Повёрнутый не на кратный 90° предмет проверяется как наклонный прямоугольник
+const ANG_STEP=5,ANG_KEY=15,ANG_SHIFT=1000,NEAR_STEP=25,NEAR_DIRS=24,FLOOR_STEP=150;   // шаг ползунка, шаг клавиш Q/E, допустимый сдвиг при повороте (мм)
+const angOf=it=>it.rot*90+(it.fa||0);
+const axes=it=>{const a=-angOf(it)*Math.PI/180;return[[Math.cos(a),Math.sin(a)],[-Math.sin(a),Math.cos(a)]]};   // оси ширины и глубины на плане
+function poly(it,x,y){const [u,v]=axes(it),a=it.w/2,b=it.d/2;return[[-a,-b],[a,-b],[a,b],[-a,b]].map(([p,q])=>[x+p*u[0]+q*v[0],y+p*u[1]+q*v[1]])}
+const rpoly=r=>[[r[0],r[1]],[r[2],r[1]],[r[2],r[3]],[r[0],r[3]]];
+function satHit(A,B){ // пересечение выпуклых многоугольников; касание и наложение до 1 мм не считаются (как в hit2)
+  for(const P of[A,B])for(let i=0;i<P.length;i++){const p=P[i],q=P[(i+1)%P.length],nx=q[1]-p[1],ny=p[0]-q[0],L=Math.hypot(nx,ny);if(!L)continue;
+    let a0=1e18,a1=-1e18,b0=1e18,b1=-1e18;
+    for(const t of A){const d=(t[0]*nx+t[1]*ny)/L;a0=Math.min(a0,d);a1=Math.max(a1,d)}
+    for(const t of B){const d=(t[0]*nx+t[1]*ny)/L;b0=Math.min(b0,d);b1=Math.max(b1,d)}
+    if(a1<=b0+1||b1<=a0+1)return false}
+  return true}
+function valid(it,x,y){
+  const r=rect(it,x,y),A=it.fa?poly(it,x,y):null,hitR=q=>A?satHit(A,rpoly(q)):hit2(r,q);
+  if(OB.some(o=>hitR(it.c.wall&&o.p?o.p:o))||items.some(o=>o!==it&&!(!it.c.rug!==!o.c.rug&&!it.c.wall&&!o.c.wall)&&(o.fa?satHit(A||rpoly(r),poly(o,o.x,o.y)):hitR(rect(o,o.x,o.y)))))return false;   // ковёр и мебель друг другу не мешают
+  if(A){const [u,v]=axes(it),nx=Math.ceil(it.w/FLOOR_STEP),ny=Math.ceil(it.d/FLOOR_STEP);   // весь наклонный прямоугольник должен лежать на полу
+    for(let i=0;i<=nx;i++)for(let j=0;j<=ny;j++){const p=-it.w/2+2+(it.w-4)*i/nx,q=-it.d/2+2+(it.d-4)*j/ny;
+      if(!inFloor(x+p*u[0]+q*v[0],y+p*u[1]+q*v[1],it.c.wall))return false}
+    return true}
+  const nx=Math.ceil((r[2]-r[0])/FLOOR_STEP),ny=Math.ceil((r[3]-r[1])/FLOOR_STEP);
+  for(let i=0;i<=nx;i++)for(let j=0;j<=ny;j++)
+    if(!inFloor(r[0]+2+(r[2]-r[0]-4)*i/nx,r[1]+2+(r[3]-r[1]-4)*j/ny,it.c.wall))return false;
+  return true;
+}
+function nearSpot(it,px,py,maxR){ // ближайшее свободное место без привязки к сетке: кольца через NEAR_STEP мм, NEAR_DIRS направлений
+  for(let r=NEAR_STEP;r<=maxR;r+=NEAR_STEP)for(let k=0;k<NEAR_DIRS;k++){const a=k*2*Math.PI/NEAR_DIRS,x=px+r*Math.cos(a),y=py+r*Math.sin(a);if(valid(it,x,y))return[x,y]}
+  return null}
+function findSpot(it,px,py,maxR=1e9){
+  const c=GRID.map(p=>[p[0],p[1],Math.hypot(p[0]-px,p[1]-py)]).filter(p=>p[2]<=maxR).sort((a,b)=>a[2]-b[2]);
+  for(const p of c)if(valid(it,p[0],p[1]))return[p[0],p[1]];
+  return null;
+}
+const put=(it,x,y)=>{it.x=x;it.y=y;it.g.position.set(x*M,0,-y*M)};
+function paint(it,bad){it.mats.forEach(m=>m.emissive&&m.emissive.setHex(bad?0xb02a2a:(it===sel?0x2a3a0c:0)))}
+function syncPanel(){
+  const it=sel;$('selS').classList.toggle('open',!!it);if(!it)return;const c=it.c,dr=!!it.dr,pw=c.wall&&!dr||!!c.round;   // у перегородки с проёмом: длина, ширина проёма и его положение
+  $('selS').classList.toggle('wsel',!!c.wall);$('selName').textContent=dr?'Перегородка с проёмом':c.name;$('rowC').style.display=c.wall?'none':'';if(!c.wall)renderTints();$('bDoor').hidden=!dr;$('bOpen').hidden=$('bFlip').hidden=!dr;$('bAddD').hidden=!c.wall||dr;if(dr){const o=!!(doorsOn&&it.dSt&&it.dSt.open),t=o?'Закрыть дверь':'Открыть дверь';$('bOpen').title=t;$('bOpenL').textContent=t;$('bOpen').setAttribute('aria-label',t);$('bOpen').setAttribute('aria-pressed',o)}$('lW').textContent=c.wall?'Длина':c.round?'Диаметр':'Ширина';$('lD').textContent=dr?'Проём':'Глубина';$('rowD').style.display=pw?'none':'';$('rowP').style.display=dr?'':'none';$('rowA').style.display=c.wall||c.round?'none':'';const hasH=!c.wall&&!!c.hr;$('rowH').style.display=hasH?'':'none';$('rowH').style.gridColumn=$('rowA').style.display==='none'?'1/-1':'';$('rowA').style.gridColumn=hasH?'':'1/-1';
+  if(hasH){const o=c.hOff||0,sh=$('sH');sh.min=c.hr[0];sh.max=c.hr[1];sh.value=it.h-o;$('vH2').textContent=Math.round(it.h-o)/10+' см'}if(!c.wall){$('sA').value=angOf(it);$('vA').textContent=angOf(it)+'°'}$('sW').parentNode.style.gridColumn=pw?'1/3':'';
+  [['W','w',0],['D','d',1]].forEach(([K,k,i])=>{const s=$('s'+K);s.min=c.min[i];s.max=c.max[i];s.step=c.wall?10:50;s.value=it[k];$('v'+K).textContent=Math.round(it[k])/10+' см'});
+  if(dr){const dw=it.dw||DOOR_W,sd=$('sD'),sp=$('sP'),m=oMax(it),o=it.o||0;$('sW').min=dw+2*jb(it);
+    sd.min=DOOR_MIN;sd.max=Math.min(DOOR_MAX,it.w-2*jb(it));sd.step=10;sd.value=dw;$('vD').textContent=dw/10+' см';
+    sp.min=-m;sp.max=m;sp.step=10;sp.value=o;$('vP').textContent=(o>0?'+':'')+Math.round(o)/10+' см'}
+}
+function select(it){if(focusSaved&&it!==sel)focusSel(false);sel=it;items.forEach(i=>paint(i,false));syncPanel()}
+// на телефоне панель выбранного предмета живёт в нижнем меню и закрывает его, пока предмет выбран; на ПК — поверх окна 3D
+const PHONE=matchMedia('(max-width:760px)');
+function placeSel(){const p=PHONE.matches?document.querySelector('aside'):stage;if($('selS').parentNode!==p)p.appendChild($('selS'))}
+placeSel();PHONE.addEventListener?PHONE.addEventListener('change',placeSel):PHONE.addListener(placeSel);
+function buildTable(it){
+  const mt=new T.MeshLambertMaterial({color:0xb98558}),add=(geo,x,y,z)=>{const m=new T.Mesh(geo,mt);m.position.set(x*M,y*M,z*M);it.g.add(m)};
+  const h=it.h;add(new T.BoxGeometry(it.w*M,40*M,it.d*M),0,h-20,0);
+  [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([a,b])=>add(new T.CylinderGeometry(38*M,26*M,(h-40)*M,6),a*(it.w/2-90),(h-40)/2,b*(it.d/2-90)));
+}
+// стол с белой глянцевой (мраморной) столешницей на двух чёрных опорах-рамах (как полозья). Цвет при перекраске меняется у столешницы: у неё самая большая площадь
+const MARBLE_TOP=30,MARBLE_BAR=40,MARBLE_INSET=220;
+function buildMarble(it){
+  const {w,d,h}=it,top=new T.MeshPhongMaterial({color:0xf2efea,specular:0x555555,shininess:70}),blk=pm(0x232325),t=MARBLE_TOP,b=MARBLE_BAR,lh=h-t;
+  part(it,top,w,t,d,0,h-t/2,0);
+  [-1,1].forEach(sg=>{const x=sg*(w/2-MARBLE_INSET),dd=d-120;
+    part(it,blk,b,b,dd,x,lh-b/2,0);part(it,blk,b,b,dd,x,b/2,0);   // верхняя и нижняя перекладины
+    [-1,1].forEach(q=>part(it,blk,b,lh,b,x,lh/2,q*(dd/2-b/2)))})}   // стойки
+// ---- низкополигональная мебель (запасной вариант, пока нет .glb). Размеры в мм, начало координат в центре основания, спинка/изголовье у задней стены (-z)
+const pm=c=>new T.MeshLambertMaterial({color:c});
+function part(it,m,w,h,d,x,y,z){const s=new T.Mesh(new T.BoxGeometry(w*M,h*M,d*M),m);s.position.set(x*M,y*M,z*M);it.g.add(s)}
+function legs(it,m,w,d,hh,inset,r){[[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([a,b])=>{const s=new T.Mesh(new T.CylinderGeometry(r*M,r*0.75*M,hh*M,6),m);s.position.set(a*(w/2-inset)*M,hh/2*M,b*(d/2-inset)*M);it.g.add(s)})}
+function buildNightstand(it){
+  const {w,d,h}=it,wd=pm(0xd9b98a),top=pm(0xb98558),dark=pm(0x45403a),fr=pm(0xe6cfa6),hh=h-140;
+  legs(it,dark,w,d,100,40,22);
+  part(it,wd,w,h-120,d,0,100+(h-120)/2,0);
+  part(it,top,w+20,20,d+20,0,h-10,0);
+  [0.25,0.75].forEach(k=>{const y=110+hh*k;part(it,fr,w-40,hh/2-8,16,0,y,d/2+8);part(it,dark,Math.min(140,w/3),14,14,0,y,d/2+22)});
+}
+function buildStool(it){
+  const {w,d,h}=it,s=new T.Mesh(new T.CylinderGeometry(w/2*M,w/2*M*0.95,50*M,8),pm(0xcdb593));
+  s.scale.z=d/w;s.position.y=(h-25)*M;it.g.add(s);
+  legs(it,pm(0xb98558),w,d,h-50,Math.min(w,d)*0.2,18);
+}
+function buildTV(it){
+  const {w,d}=it,sh=it.h-(it.c.hOff||0),body=pm(0xd8d2c8),dr=pm(0xc4bbad),top=pm(0xb98558),dark=pm(0x2b2f36),scr=pm(0x18202c),tw=Math.max(700,Math.min(1500,w*0.75)),th=tw*0.56,ty=sh+120+th/2;
+  legs(it,dark,w,d,80,60,20);
+  part(it,body,w,sh-100,d,0,80+(sh-100)/2,0);
+  part(it,top,w+20,20,d+20,0,sh-10,0);
+  [-1,1].forEach(a=>{part(it,dr,w/2-30,sh-130,12,a*w/4,80+(sh-100)/2,d/2+6);part(it,dark,12,120,12,a*28,80+(sh-100)/2,d/2+18)});
+  part(it,dark,Math.min(500,tw*0.4),14,220,0,sh+7,0);   // подставка
+  part(it,dark,80,110,30,0,sh+14+55,-30);               // шея
+  part(it,dark,tw,th,36,0,ty,-30);                      // рамка телевизора
+  part(it,scr,tw-36,th-36,6,0,ty,-9);                   // экран
+}
+// перегородка добавляется отдельной кнопкой, не входит в каталог мебели; толщина PART_T (80 мм), высота = текущая высота стен, длина регулируется ползунком
+const PART_T=80;   // толщина перегородки, как у межкомнатных стен по чертежу
+const PART={id:'partition',name:'Перегородка',w:2000,d:PART_T,h:2700,min:[500,PART_T],max:[10000,PART_T],build:buildPartition,wall:true};
+function buildPartition(it){
+  if(it.dr)return buildPartDoor(it);
+  const hh=H;
+  part(it,pm(0xffffff),it.w,hh,it.d,0,hh/2,0);
+}
+// перегородка с дверным проёмом: проём DOOR_W (с наличниками, в свету 80 см) высотой DOOR_H, от краёв не ближе JAMB.
+// it.o: сдвиг центра проёма от центра перегородки вдоль её длины (мм, в локальных координатах). Весь прямоугольник остаётся препятствием: в проёме мебель не ставится
+const DOOR_W=900,DOOR_H=2100,JAMB=100;
+const DOOR_MIN=700,DOOR_MAX=1000;   // ширина проёма it.dw (вместе с наличниками), по умолчанию DOOR_W
+const jb=it=>it.jb==null?JAMB:it.jb;   // отступ проёма от края перегородки; у исходных стен 0: проём упирается в стену
+const oMax=it=>Math.max(0,it.w/2-(it.dw||DOOR_W)/2-jb(it));
+function buildPartDoor(it){
+  const hh=H,L=it.w,t=it.d,m=oMax(it),o=it.o=Math.max(-m,Math.min(m,it.o||0)),dw=it.dw||DOOR_W,a=o-dw/2,b=o+dw/2,wm=pm(0xffffff),fr=pm(0xe9e4dc),FW=50,FT=t+20,dh=Math.min(DOOR_H,hh);
+  part(it,wm,a+L/2,hh,t,(a-L/2)/2,hh/2,0);                       // левая часть
+  part(it,wm,L/2-b,hh,t,(b+L/2)/2,hh/2,0);                       // правая часть
+  if(hh>DOOR_H)part(it,wm,dw,hh-DOOR_H,t,o,DOOR_H+(hh-DOOR_H)/2,0);   // перемычка над проёмом
+  part(it,fr,FW,dh,FT,a+FW/2,dh/2,0);part(it,fr,FW,dh,FT,b-FW/2,dh/2,0);   // наличники
+  if(hh>DOOR_H)part(it,fr,dw,FW,FT,o,DOOR_H-FW/2,0);
+  if(doorsOn){const l=makeLeaf(dw-2*FW-2*LEAF_GAP,DOOR_H-(hh>DOOR_H?FW:0)-LEAF_GAP,pm(0xd9c4a3),pm(0x2b2b2b),it.dSt||(it.dSt={open:false}));l.position.x=o*M;it.g.add(l)}
+}
+function opApply(it){ // прозрачность стен действует и на перегородки
+  it.mats.forEach(m=>{m.transparent=wallOp<1;m.opacity=wallOp;m.depthWrite=wallOp>=1;m.needsUpdate=true});
+  it.g.traverse(o=>{if(o.isMesh)o.castShadow=wallOp>0.6});
+}
+// ---- «дорогая» мебель: скруглённые бруски со скошенными кромками, подушки, латунь. Размеры в мм, y: высота центра, z: вперёд (+z = лицо)
+function rs2(w,d,r){const s=new T.Shape(),x=-w/2,y=-d/2;r=Math.max(0.1,Math.min(r,w/2-0.1,d/2-0.1));s.moveTo(x+r,y);s.lineTo(x+w-r,y);s.quadraticCurveTo(x+w,y,x+w,y+r);s.lineTo(x+w,y+d-r);s.quadraticCurveTo(x+w,y+d,x+w-r,y+d);s.lineTo(x+r,y+d);s.quadraticCurveTo(x,y+d,x,y+d-r);s.lineTo(x,y+r);s.quadraticCurveTo(x,y,x+r,y);return s}
+function rpart(it,m,w,h,d,x,y,z,r=30,b=10){
+  b=Math.max(0.5,Math.min(b,w/2-1,h/2-1,d/2-1));
+  const g=new T.ExtrudeGeometry(rs2(w-2*b,d-2*b,r),{depth:Math.max(h-2*b,0.1),bevelEnabled:true,bevelThickness:b,bevelSize:b,bevelSegments:2,curveSegments:6});
+  g.rotateX(-Math.PI/2);g.translate(0,b-h/2,0);g.scale(M,M,M);
+  const o=new T.Mesh(g,m);o.position.set(x*M,y*M,z*M);it.g.add(o);return o}
+function cpart(it,m,r,h,x,y,z,seg=14){const o=new T.Mesh(new T.CylinderGeometry(r*M,r*M,h*M,seg),m);o.position.set(x*M,y*M,z*M);it.g.add(o);return o}
+const fab=c=>new T.MeshLambertMaterial({color:c}),goldM=()=>new T.MeshPhongMaterial({color:0xc9a45c,specular:0xffeebb,shininess:90});
+function buildSofa(it){
+  const {w,d,h}=it,ar=200,iw=w-2*ar,n=Math.max(2,Math.round(iw/720)),cw=iw/n;
+  const brown=fab(0x8f7360),soft=fab(0x9c7f6a),dark=fab(0x3b322d),g1=fab(0xaaa8a7),g2=fab(0x8e9094),cream=fab(0xf1ebe0);
+  [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([a,b])=>cpart(it,dark,28,70,a*(w/2-80),35,b*(d/2-80),8));   // ножки
+  rpart(it,brown,w,190,d,0,165,0,60,22);                                          // основание
+  rpart(it,brown,iw+40,h-190,130,0,190+(h-190)/2,-d/2+65,40,22);                  // спинка
+  [-1,1].forEach(a=>rpart(it,brown,ar,540,d,a*(w/2-ar/2),340,0,55,26));           // подлокотники
+  for(let i=0;i<n;i++){const x=-iw/2+cw*(i+.5);
+    rpart(it,soft,cw-8,170,d-250,x,345,60,50,26);                                  // подушка сиденья
+    rpart(it,soft,cw-8,h-450,190,x,430+(h-450)/2,-d/2+225,45,24);}                 // подушка спинки
+  const p1=rpart(it,g1,420,400,130,-iw/2+cw*.5-60,630,-d/2+370,55,48);p1.rotation.x=-0.28;           // декоративные подушки
+  const p2=rpart(it,g2,380,360,120,-iw/2+cw*.5+210,610,-d/2+360,55,44);p2.rotation.x=-0.3;p2.rotation.y=0.2;
+  const tx=iw/2-cw*.5;                                                             // плед на правом сиденье, свисает спереди
+  rpart(it,cream,380,18,d-330,tx,439,40,10,8);rpart(it,cream,380,240,18,tx,328,d/2-56,8,7);
+}
+function buildWardrobe(it){
+  const {w,d,h}=it,body=fab(0xb7aaa2),door=fab(0xc2b6ae),dark=fab(0x8a7f78),gd=goldM(),n=2*Math.max(1,Math.round(w/1200)),dw=(w-24)/n;
+  rpart(it,dark,w-70,90,d-50,0,45,0,8,5);                                          // цоколь
+  rpart(it,body,w,h-90,d,0,90+(h-90)/2,0,14,8);                                    // корпус
+  for(let i=0;i<n;i++){const x=-w/2+12+dw*(i+.5);
+    rpart(it,door,dw-5,h-130,18,x,100+(h-130)/2,d/2+9,6,4);                       // фасад
+    const s=(i%2?-1:1)*(dw/2-42);                                                  // длинная латунная ручка у шва между фасадами
+    cpart(it,gd,9,Math.min(950,(h-130)*0.46),x+s,Math.min(1100,h*0.52),d/2+34);}
+}
+function buildBed(it){
+  const {w,d,h}=it,beige=fab(0xcbc1b4),dark=fab(0x3b322d),mat=fab(0xf4f2ec),duv=fab(0xfbfaf6),sage=fab(0x8fa795),pil=fab(0xf7f6f1),line=fab(0xb3a898),dd=(d-190)*0.64,zc=d/2-60-dd/2;
+  [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([a,b])=>cpart(it,dark,28,70,a*(w/2-70),35,b*(d/2-70),8));   // ножки
+  rpart(it,beige,w,300,d-70,0,220,35,70,24);                                       // каркас-подиум
+  const hb=h-70;rpart(it,beige,w+40,hb,90,0,70+hb/2,-d/2+45,40,20);               // мягкое изголовье
+  const n=Math.max(3,Math.round(w/300));
+  for(let i=1;i<n;i++)rpart(it,line,8,hb-160,6,-(w+40)/2+(w+40)*i/n,70+hb/2,-d/2+92,1,2);   // вертикальные канавки
+  rpart(it,mat,w-90,230,d-190,0,485,10,40,28);                                     // матрас
+  rpart(it,duv,w-50,70,dd,0,635,zc,40,28);                                         // одеяло
+  [-1,1].forEach(a=>rpart(it,duv,26,260,dd,a*(w/2-14),540,zc,10,10));             // свисает по бокам
+  rpart(it,duv,w-50,240,26,0,550,d/2-47,10,10);                                    // и в ногах
+  rpart(it,sage,w-40,24,420,0,682,d/2-60-190,10,8);rpart(it,sage,w-40,220,24,0,575,d/2-34,8,8);   // плед-дорожка
+  [-1,1].forEach(a=>{const p=rpart(it,pil,w/2-110,150,360,a*(w/4),675,-d/2+295,70,55);p.rotation.x=-0.22;});   // подушки
+  [-1,1].forEach(a=>{const p=rpart(it,sage,w*0.22,120,220,a*w*0.2,660,-d/2+455,45,40);p.rotation.x=-0.2;});
+}
+// ---- стулья и кресло по каталогу: конусные наклонные ножки, дуга-спинка, панель с круглым вырезом
+function lpart(it,m,rb,rt,x0,y0,z0,x1,y1,z1,seg=10){
+  const a=new T.Vector3(x0,y0,z0),b=new T.Vector3(x1,y1,z1),L=a.distanceTo(b),o=new T.Mesh(new T.CylinderGeometry(rt*M,rb*M,L*M,seg),m);
+  o.position.copy(a.clone().add(b).multiplyScalar(0.5*M));
+  o.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),b.clone().sub(a).normalize());
+  it.g.add(o);return o}
+function arcBand(it,m,R,zc,y,h,t,a0,a1,n){ // дуга из n сегментов позади сиденья, углы в градусах от направления назад
+  const da=(a1-a0)/n*Math.PI/180;
+  for(let k=0;k<n;k++){const th=(a0+(k+.5)*(a1-a0)/n)*Math.PI/180,sw=2*R*Math.tan(da/2)*1.06,o=rpart(it,m,sw,h,t,R*Math.sin(th),y,zc-R*Math.cos(th),2,1.5);o.rotation.y=-th}}
+function hpanel(it,m,w,h,t,r,hr,x,y,z,ry=0,rx=0){ // вертикальная панель со скруглёнными углами и круглым вырезом
+  const sh=rs2(w,h,r),p=new T.Path();p.absarc(0,h*0.1,hr,0,Math.PI*2,true);sh.holes.push(p);
+  const g=new T.ExtrudeGeometry(sh,{depth:t,bevelEnabled:true,bevelThickness:5,bevelSize:5,bevelSegments:2,curveSegments:10});
+  g.translate(0,0,-t/2);g.scale(M,M,M);const o=new T.Mesh(g,m);o.position.set(x*M,y*M,z*M);o.rotation.set(rx,ry,0);it.g.add(o);return o}
+function buildChair(it){ // стул 1: дерево и горчичная обивка, изогнутая спинка
+  const {w,d}=it,wood=fab(0xb07a45),org=fab(0xc98a3e),hw=w/2,hd=d/2;
+  [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([a,b])=>lpart(it,wood,13,20,a*(hw+14),0,b*(hd+14),a*(hw-45),400,b*(hd-45)));
+  rpart(it,wood,w-30,40,d-30,0,395,0,80,14);                         // царга
+  rpart(it,org,w-20,70,d-20,0,445,0,120,32);                         // сиденье
+  arcBand(it,wood,hd-15,18,610,230,26,-62,62,7);                     // деревянная дуга спинки
+  arcBand(it,org,hd-34,18,615,170,24,-52,52,6);                      // мягкая вставка
+}
+function buildChair2(it){ // стул 2: зелёный бархат, спинка-раковина с круглым вырезом, наклонные ножки
+  const {w,d}=it,wood=fab(0xa8743f),grn=fab(0x7d9a87),hw=w/2,hd=d/2,hh=300,yb=490+hh/2;
+  [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([a,b])=>lpart(it,wood,11,19,a*(hw+25),0,b*(hd+25),a*(hw-60),420,b*(hd-60)));
+  rpart(it,wood,w-60,36,d-60,0,402,0,60,12);
+  rpart(it,grn,w,80,d-20,0,462,0,100,36);                            // сиденье
+  hpanel(it,grn,300,hh,34,60,55,0,yb,-hd+40,0,-0.18);               // центр спинки с круглым вырезом
+  [-1,1].forEach(a=>{const o=rpart(it,grn,150,hh,34,a*216,yb,-hd+76,40,12);o.rotation.set(-0.18,-a*0.5,0)});   // боковые крылья
+}
+function shellGeo(Rx,Rz,t,y0,a0,a1,N,hf){ // оболочка кресла: скруглённое сечение ведём по дуге эллипса, высота верха зависит от угла (мм -> м)
+  const P=[[-t/2,null],[t/2,null],[t/2,35],[t/2-12,12],[t/2-35,0],[-t/2+35,0],[-t/2+12,12],[-t/2,35]],np=P.length,pos=[],idx=[];
+  for(let i=0;i<=N;i++){
+    const th=(a0+(a1-a0)*i/N)*Math.PI/180,yt=hf(th),nx=Math.sin(th)/Rx,nz=-Math.cos(th)/Rz,nl=Math.hypot(nx,nz),cx=Rx*Math.sin(th),cz=-Rz*Math.cos(th);
+    P.forEach(([u,v])=>pos.push((cx+nx/nl*u)*M,(v===null?y0:yt-v)*M,(cz+nz/nl*u)*M));}
+  for(let i=0;i<N;i++)for(let j=0;j<np;j++){const p=i*np+j,q=i*np+(j+1)%np,r=p+np,s=q+np;idx.push(p,r,q,q,r,s)}
+  [0,N].forEach(i=>{const base=i*np;let cx=0,cy=0,cz=0;for(let j=0;j<np;j++){cx+=pos[(base+j)*3];cy+=pos[(base+j)*3+1];cz+=pos[(base+j)*3+2]}
+    const ci=pos.length/3;pos.push(cx/np,cy/np,cz/np);for(let j=0;j<np;j++)idx.push(ci,base+j,base+(j+1)%np)});
+  const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(pos,3));g.setIndex(idx);g.computeVertexNormals();return g}
+function buildArmchair(it){ // кресло-«ванна»: цельная оболочка спинка+подлокотники (спинка выше, подлокотники опускаются к переду), сиденье и подушка, ножки
+  const {w,d,h}=it,t=170,Rx=w/2-t/2,Rz=d/2-t/2,y0=225,armH=610,backH=h;
+  const sk=new T.MeshLambertMaterial({color:0xc88a35,side:T.DoubleSide}),seat=fab(0xc88a35),cush=fab(0xd29a4a),wood=fab(0xaa7440),sage=fab(0x8fa795);
+  const hf=th=>{const a=Math.abs(th)*180/Math.PI;let r=armH+(backH-armH)*Math.pow(Math.max(0,Math.cos(th*1.1)),2);if(a>80)r-=70*(a-80)/45;return r};
+  it.g.add(new T.Mesh(shellGeo(Rx,Rz,t,y0,-140,140,48,hf),sk));                      // оболочка
+  [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([a,b])=>lpart(it,wood,15,24,a*(w/2+10),0,b*(d/2+10),a*(w/2-90),y0+15,b*(d/2-110)));   // короткие наклонные ножки
+  const inner=w-2*t+50,front=d/2-12,back=-d/2+t-10;
+  rpart(it,seat,inner,170,front-back,0,y0+85+10,(front+back)/2,90,40);                // основание сиденья
+  rpart(it,cush,inner-20,105,front-back-75,0,y0+170+10+40,(front+back)/2+25,75,42);   // подушка сиденья
+  const p=rpart(it,sage,360,340,120,-70,y0+170+105+150,back+120,55,45);p.rotation.x=-0.3;p.rotation.y=0.15;   // декоративная подушка
+}
+function buildDresser(it){ // комод в стилистике шкафа: таупе, цоколь, три ряда ящиков, горизонтальные латунные ручки (при ширине больше 1,3 м ящики в две колонки)
+  const {w,d,h}=it,body=fab(0xb7aaa2),front=fab(0xc2b6ae),top=fab(0xcfc4bc),dark=fab(0x8a7f78),gd=goldM(),rows=3,cols=w>1300?2:1,y0=92,y1=h-32,dh=(y1-y0-6*(rows-1))/rows,dw=(w-24)/cols;
+  rpart(it,dark,w-70,80,d-50,0,40,0,8,5);                                           // цоколь
+  rpart(it,body,w,h-80-20,d,0,80+(h-100)/2,0,14,8);                                 // корпус
+  rpart(it,top,w+20,26,d+20,0,h-13,0,14,8);                                         // столешница с небольшим свесом
+  for(let c=0;c<cols;c++)for(let r=0;r<rows;r++){
+    const x=-w/2+12+dw*(c+.5),y=y0+dh/2+r*(dh+6);
+    rpart(it,front,dw-5,dh,18,x,y,d/2+9,6,4);                                        // фасад ящика
+    const hb=cpart(it,gd,8,Math.min(dw*0.45,360),x,y+dh*0.22,d/2+30);hb.rotation.z=Math.PI/2;}   // латунная ручка
+}
+
+// ======== новая мебель: ковры, односпальная и детская кровати, вешалка, обувница. Цвета из палитры квартиры (palette.json)
+const PAL={linen:0xf1eeea,grey:0x8f8a8c,green:0x6f9481,deep:0x4e625b,cognac:0xb8743f,taupe:0x8e807b,oak:0xb8916a,light:0xd4c3b3,black:0x2b2b2b,cream:0xe4dad3,sage:0x7f958f};
+function bar(it,m,x0,y0,z0,x1,y1,z1,t,t2=t){ // брусок сечением t×t2 от точки до точки
+  const a=new T.Vector3(x0,y0,z0),b=new T.Vector3(x1,y1,z1),o=new T.Mesh(new T.BoxGeometry(t*M,a.distanceTo(b)*M,t2*M),m);
+  o.position.copy(a.clone().add(b).multiplyScalar(0.5*M));o.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),b.clone().sub(a).normalize());it.g.add(o);return o}
+function sph(it,m,r,x,y,z,sx=1,sy=1,sz=1){const o=new T.Mesh(new T.SphereGeometry(r*M,14,10),m);o.position.set(x*M,y*M,z*M);o.scale.set(sx,sy,sz);it.g.add(o);return o}
+// ---- ковры: рисунок на холсте в масштабе ковра (бордюр не растягивается), бахрома прозрачной полоской
+// узор рисуется детерминированно (своя последовательность случайных чисел), поэтому при изменении размера не «дрожит»;
+// рисунок привязан к центру ковра, текстура у каждого ковра своя, старая освобождается
+let rugR=Math.random;const seeded=s0=>{let s=s0;return()=>(s=(s*16807)%2147483647)/2147483647};
+function wool(g,W,Hc,n){for(let i=0;i<n;i++){const v=rugR();g.fillStyle=v<.5?'rgba(0,0,0,.05)':'rgba(255,255,255,.07)';g.fillRect(rugR()*W,rugR()*Hc,1+rugR()*2,1+rugR()*2)}}
+const RUGS={
+  berber:{side:0xe9e2d8,draw(g,W,Hc,k){g.fillStyle='#efe9e0';g.fillRect(0,0,W,Hc);wool(g,W,Hc,W*Hc/40);
+    const m=70*k,dw=300*k,dh=420*k,x0=W/2-dw/2-Math.ceil(W/2/dw+1)*dw,y0=Hc/2-dh/2-Math.ceil(Hc/2/dh+1)*dh;g.save();g.beginPath();g.rect(m,m,W-2*m,Hc-2*m);g.clip();g.strokeStyle='#3a332e';g.lineCap='round';
+    for(let pass=0;pass<2;pass++){g.lineWidth=(pass?4:9)*k;g.globalAlpha=pass?.35:.85;
+      for(let x=x0;x<W+dw;x+=dw)for(let y=y0;y<Hc+dh;y+=dh){g.beginPath();g.moveTo(x,y+dh/2+(rugR()-.5)*6*k);g.lineTo(x+dw/2+(rugR()-.5)*6*k,y);g.lineTo(x+dw,y+dh/2);g.lineTo(x+dw/2,y+dh);g.closePath();g.stroke()}}
+    g.globalAlpha=1;g.fillStyle='#3a332e';for(let x=x0;x<W+dw;x+=dw)for(let y=y0;y<Hc+dh;y+=dh){g.beginPath();g.arc(x+dw/2,y+dh/2,11*k,0,7);g.fill()}
+    g.restore();g.strokeStyle='rgba(58,51,46,.55)';g.lineWidth=5*k;g.strokeRect(m/2,m/2,W-m,Hc-m)}},
+  border:{side:0x5f8270,draw(g,W,Hc,k){g.fillStyle='#6f9481';g.fillRect(0,0,W,Hc);
+    const gr=g.createRadialGradient(W/2,Hc/2,0,W/2,Hc/2,Math.max(W,Hc)*.6);gr.addColorStop(0,'rgba(255,255,255,.10)');gr.addColorStop(1,'rgba(0,0,0,.08)');g.fillStyle=gr;g.fillRect(0,0,W,Hc);
+    const b=130*k;g.fillStyle='#e4dad3';g.fillRect(0,0,W,b);g.fillRect(0,Hc-b,W,b);g.fillRect(0,0,b,Hc);g.fillRect(W-b,0,b,Hc);
+    g.strokeStyle='#4e625b';g.lineWidth=14*k;g.strokeRect(b+30*k,b+30*k,W-2*b-60*k,Hc-2*b-60*k);g.lineWidth=5*k;g.strokeRect(b*.45,b*.45,W-b*.9,Hc-b*.9);
+    g.fillStyle='#4e625b';for(let j=-Math.floor((W/2-b*.45-30*k)/(80*k));j<=Math.floor((W/2-b*.45-30*k)/(80*k));j++){const x=W/2+j*80*k;g.save();g.translate(x,b*.72);g.rotate(Math.PI/4);g.fillRect(-12*k,-12*k,24*k,24*k);g.restore();g.save();g.translate(x,Hc-b*.72);g.rotate(Math.PI/4);g.fillRect(-12*k,-12*k,24*k,24*k);g.restore()}
+    g.save();g.translate(W/2,Hc/2);g.strokeStyle='rgba(228,218,211,.75)';g.lineWidth=8*k;const R=Math.min(W,Hc)*.16;g.beginPath();for(let i=0;i<8;i++){const a=i*Math.PI/4;g.moveTo(0,0);g.lineTo(Math.cos(a)*R,Math.sin(a)*R)}g.stroke();
+    g.beginPath();g.arc(0,0,R*.55,0,7);g.stroke();g.beginPath();g.arc(0,0,R,0,7);g.stroke();g.restore();wool(g,W,Hc,W*Hc/45)}},
+  round:{side:0xb8a690,draw(g,W,Hc,k){const c=W/2;g.fillStyle='#d4c3b3';g.fillRect(0,0,W,Hc);
+    for(let r=c;r>0;r-=7*k){g.beginPath();g.arc(c,c,r,0,7);const v=rugR();g.strokeStyle=v<.33?'#c2ae98':v<.66?'#dccdbd':'#cbb9a5';g.lineWidth=5*k;g.stroke()}
+    [[.92,'#8e807b',26],[.70,'#f1eeea',18],[.66,'#8e807b',8],[.30,'#8e807b',14]].forEach(([f,col,lw])=>{g.beginPath();g.arc(c,c,c*f,0,7);g.strokeStyle=col;g.lineWidth=lw*k;g.stroke()});wool(g,W,Hc,W*Hc/50)}}};
+function rugTexFor(it,kind){
+  const big=Math.max(it.w,it.d),W=Math.round(1024*it.w/big),Hc=Math.round(1024*it.d/big),key=kind+'_'+Math.round(it.w/10)+'_'+Math.round(it.d/10);
+  if(it.rt&&it.rt.key===key)return it.rt.t;
+  rugR=seeded(4242);const t=ctex(W,Hc,g=>RUGS[kind].draw(g,W,Hc,W/it.w));t.wrapS=t.wrapT=T.ClampToEdgeWrapping;
+  if(it.rt)it.rt.t.dispose();it.rt={key,t};return t}
+function fringeTex(d){rugR=seeded(77);return ctex(16,256,g=>{g.clearRect(0,0,16,256);for(let y=2;y<256;y+=5){g.fillStyle=rugR()<.5?'#efe9e0':'#e2d9cc';g.fillRect(0,y,16-rugR()*3,2.4)}})}
+function buildRug(it,kind){
+  const {w,d}=it,R=RUGS[kind],t=10,top=new T.MeshLambertMaterial({map:rugTexFor(it,kind)}),side=pm(R.side);
+  if(kind==='round'){const o=new T.Mesh(new T.CylinderGeometry(0.5,0.5,t*M,72),[side,top,side]);o.scale.set(w*M,1,d*M);o.position.y=(t/2+1)*M;it.g.add(o);return}
+  const o=new T.Mesh(new T.BoxGeometry(w*M,t*M,d*M),[side,side,top,side,side,side]);o.position.y=(t/2+1)*M;it.g.add(o);
+  if(kind==='berber'){const fm=new T.MeshLambertMaterial({map:fringeTex(d),transparent:true,alphaTest:0.4,side:T.DoubleSide});
+    [-1,1].forEach(a=>{const f=new T.Mesh(new T.PlaneGeometry(60*M,d*M*0.98),fm);f.rotation.x=-Math.PI/2;if(a<0)f.rotation.z=Math.PI;f.position.set(a*(w/2+28)*M,4*M,0);it.g.add(f)})}
+}
+// ---- односпальная кровать: дубовая рама на конусных ножках, мягкое изголовье с каналами, одеяло, плед, подушки
+function buildSingleBed(it){
+  const {w,d,h}=it,oak=pm(PAL.oak),oakD=pm(0x9c7650),head=fab(PAL.grey),line=fab(0x7b7678),mat=fab(0xf7f6f3),duv=fab(PAL.linen),thr=fab(PAL.cognac),pil=fab(0xf7f6f1),cush=fab(PAL.green),dd=(d-260)*0.62,zc=d/2-50-dd/2;
+  [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([a,b])=>lpart(it,oakD,20,30,a*(w/2-70),0,b*(d/2-80),a*(w/2-62),190,b*(d/2-74),10));   // ножки
+  rpart(it,oak,w,150,d-60,0,255,30,18,8);                                              // царга
+  part(it,oakD,w-60,12,d-120,0,336,30);                                                // ламели под матрасом
+  const y0=190,hp=h-y0;rpart(it,oak,w+20,hp,44,0,y0+hp/2,-d/2+22,14,6);                // дубовый щит изголовья
+  const hh=hp-90;rpart(it,head,w-50,hh,70,0,y0+60+hh/2,-d/2+79,30,18);                  // мягкая панель
+  const n=Math.max(3,Math.round((w-50)/170));for(let i=1;i<n;i++)rpart(it,line,8,hh-50,6,-(w-50)/2+(w-50)*i/n,y0+60+hh/2,-d/2+115,1,2);
+  rpart(it,mat,w-70,210,d-170,0,445,40,40,28);                                         // матрас
+  rpart(it,duv,w-30,60,dd,0,575,zc,40,26);                                             // одеяло
+  [-1,1].forEach(a=>rpart(it,duv,24,250,dd,a*(w/2-17),470,zc,10,10));                 // свисает по бокам
+  rpart(it,duv,w-30,90,150,0,590,zc-dd/2+75,40,30);                                    // отвёрнутый край
+  rpart(it,thr,w+6,22,360,0,612,d/2-250,10,8);rpart(it,thr,w+6,240,22,0,505,d/2-38,8,8);   // плед в ногах
+  [-1,1].forEach(a=>rpart(it,thr,22,170,360,a*(w/2+3),530,d/2-250,8,8));
+  const p=rpart(it,pil,w-190,160,400,0,620,-d/2+300,70,55);p.rotation.x=-0.25;        // подушка
+  const q=rpart(it,cush,w*0.42,140,210,0,610,-d/2+500,45,40);q.rotation.x=-0.2;          // декоративная подушка
+}
+// ---- детская кровать-домик: каркас из светлого дерева с двускатной «крышей», бортики, флажки, мишка
+function buildKidsBed(it){
+  const {w,d,h}=it,wood=pm(PAL.light),wood2=pm(0xc6b39f),mat=fab(0xf7f6f3),sheet=fab(PAL.linen),bl=fab(PAL.green),blS=fab(0x86a796),pil=fab(0xf7f6f1),bear=fab(PAL.cognac),bearL=fab(0xd8a477),dark=pm(0x2b2b2b);
+  const t=50,px=w/2-t/2,pz=d/2-t/2,he=h-w*0.45;
+  [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([a,b])=>part(it,wood,t,he,t,a*px,he/2,b*pz));   // столбы
+  [-1,1].forEach(a=>part(it,wood,t*0.8,120,d-2*t,a*px,190,0));[-1,1].forEach(b=>part(it,wood,w-2*t,120,t*0.8,0,190,b*pz));   // царги
+  [-1,1].forEach(a=>part(it,wood,t,t,d,a*px,he-t/2,0));                                // карнизы
+  [-1,1].forEach(b=>[-1,1].forEach(a=>bar(it,wood,a*px,he-t/2,b*pz,0,h-t/2,b*pz,t)));  // стропила
+  part(it,wood,t,t,d+40,0,h-t/2,0);                                                    // конёк
+  [-1,1].forEach(b=>{[420,580,740].forEach(y=>part(it,wood2,w-2*t,40,26,0,y,b*pz))});  // спинки из реек
+  part(it,wood2,26,40,d-2*t,-px,560,0);part(it,wood2,26,40,d-2*t,-px,430,0);             // бортик у стены
+  const bz=-(d-2*t)*0.22;part(it,wood2,26,40,(d-2*t)*0.56,px,560,bz);part(it,wood2,26,40,(d-2*t)*0.56,px,430,bz);   // бортик со стороны входа: половина длины
+  rpart(it,mat,w-2*t-16,150,d-2*t-16,0,325,0,40,26);                                   // матрас
+  rpart(it,sheet,w-2*t-8,12,d-2*t-8,0,396,0,30,5);
+  const L=(d-2*t)*0.55,zb=(d-2*t)/2-L/2;rpart(it,bl,w-2*t+4,45,L,0,418,zb,30,20);     // одеяло на ногах
+  rpart(it,blS,w-2*t+4,70,110,0,432,zb-L/2+55,30,26);
+  const pp=rpart(it,pil,w-2*t-110,100,300,0,445,-d/2+t+200,55,45);pp.rotation.x=-0.25;  // подушка
+  // мишка на подушке
+  const bx=(w-2*t)*0.22,bzz=-d/2+t+330;sph(it,bear,62,bx,470,bzz,1,1.1,0.85);sph(it,bear,46,bx,560,bzz-10);
+  [-1,1].forEach(a=>{sph(it,bear,17,bx+a*32,598,bzz-12);sph(it,bear,22,bx+a*55,448,bzz+30,1,.8,1.3)});sph(it,bearL,18,bx,550,bzz+32);sph(it,dark,5,bx-15,572,bzz+34);sph(it,dark,5,bx+15,572,bzz+34);
+  // гирлянда флажков под коньком
+  const cols=[PAL.green,PAL.cognac,PAL.cream,PAL.deep,PAL.sage],nf=Math.max(4,Math.floor((d-2*t)/150)),sag=90,y0=h-150;
+  const sm=pm(PAL.light);bar(it,sm,0,y0,-pz,0,y0-sag,0,4);bar(it,sm,0,y0-sag,0,0,y0,pz,4);
+  for(let i=0;i<nf;i++){const z=-pz+(2*pz)*(i+0.5)/nf,f=Math.abs(z)/pz,y=y0-sag*(1-f)-6;
+    const sh=new T.Shape([new T.Vector2(-42,0),new T.Vector2(42,0),new T.Vector2(0,-78)]),g=new T.ShapeGeometry(sh);g.scale(M,M,M);
+    const o=new T.Mesh(g,new T.MeshLambertMaterial({color:cols[i%cols.length],side:T.DoubleSide}));o.rotation.y=Math.PI/2;o.position.set(0,y*M,z*M);it.g.add(o)}
+}
+// ---- напольная вешалка: чёрный металл, дубовая полка с обувью, плечики с одеждой
+function buildRack(it){
+  const {w,d,h}=it,met=pm(PAL.black),oak=pm(PAL.oak),hw=pm(PAL.light),r=12,x=w/2-r-4;
+  [-1,1].forEach(a=>{cpart(it,met,r,h-30,a*x,(h-30)/2+10,0,10);rpart(it,met,34,20,d,a*x,10,0,6,4)});   // стойки и ножки-полозья
+  lpart(it,met,r,r,-x,h-r,0,x,h-r,0,10);                                                // штанга
+  rpart(it,oak,w-2*r-20,24,d-70,0,262,0,6,4);[-1,1].forEach(b=>lpart(it,met,7,7,-x,248,b*(d/2-50),x,248,b*(d/2-50),8));   // полка
+  const shoe=[[0x2b2b2b,95],[PAL.cognac,90],[0xf3f2f0,100]],np=Math.max(1,Math.floor((w-120)/260));
+  for(let i=0;i<np;i++){const sx=-(w-120)/2+(w-120)*(i+0.5)/np,[c,hh]=shoe[i%3],m=fab(c);[-1,1].forEach(a=>{rpart(it,m,92,hh*0.6,250,sx+a*55,274+hh*0.3,0,40,18);rpart(it,m,80,hh*0.45,110,sx+a*55,274+hh*0.6+hh*0.2,-62,30,14)})}
+  const CL=[[PAL.grey,1050,'coat'],[PAL.linen,700,'shirt'],[PAL.cognac,650,'jacket'],[PAL.green,950,'dress'],[PAL.taupe,800,'coat']];
+  const ng=Math.max(2,Math.min(6,Math.floor((w-180)/150)));
+  for(let i=0;i<ng;i++){const gx=-(w-200)/2+(w-200)*(i+0.5)/ng+((i*37)%23-11),[col,len0,kind]=CL[i%CL.length],len=Math.min(len0,h-130-300-60),m=fab(col),yt=h-r-70;
+    lpart(it,met,3,3,gx,h-r,0,gx,yt,0,6);                                               // крючок
+    [-1,1].forEach(a=>lpart(it,hw,8,8,gx,yt,0,gx,yt-60,a*185,6));lpart(it,hw,5,5,gx,yt-60,-185,gx,yt-60,185,6);   // плечики
+    const yc=yt-60-len/2+10,wd=kind==='dress'?330:400;rpart(it,m,kind==='shirt'?50:70,len,wd,gx,yc,0,30,20);   // вещь
+    if(kind!=='dress')[-1,1].forEach(a=>rpart(it,m,55,len*0.72,70,gx,yt-60-len*0.36,a*(wd/2+20),25,18));   // рукава
+    if(kind==='coat')rpart(it,pm(0xc9a45c),8,8,8,gx+38,yc+len*0.2,0,2,2);}
+}
+// ---- обувница: корпус таупе на чёрных ножках, откидные секции с латунными ручками, дубовая столешница, ваза и поднос
+function buildShoeCab(it){
+  const {w,d,h}=it,tp=pm(PAL.taupe),fr=pm(0x9a8d88),oak=pm(PAL.oak),met=pm(PAL.black),gd=goldM(),hl=110,top=30,hb=h-hl-top;
+  [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([a,b])=>lpart(it,met,8,11,a*(w/2-45),0,b*(d/2-45),a*(w/2-45),hl,b*(d/2-45),8));   // ножки
+  part(it,tp,w,hb,d-24,0,hl+hb/2,-12);                                                  // корпус
+  rpart(it,oak,w+16,top,d+6,0,h-top/2,0,8,4);                                           // столешница
+  const cols=Math.max(1,Math.round(w/480)),rows=2,cw=w/cols,rh=hb/rows;
+  for(let c=0;c<cols;c++)for(let r=0;r<rows;r++){const x=-w/2+cw*(c+0.5),y=hl+rh*(r+0.5);
+    rpart(it,fr,cw-10,rh-10,18,x,y,d/2-12+9,6,3);                                       // створка
+    part(it,tp,cw-60,4,4,x,y-rh/2+40,d/2+1);                                            // теневой паз
+    const hd=cpart(it,gd,7,Math.min(cw*0.42,260),x,y+rh/2-55,d/2+16,10);hd.rotation.z=Math.PI/2}   // латунная ручка
+  cpart(it,fab(PAL.sage),55,200,w/2-120,h+100,-10,18);cpart(it,fab(0x6c827c),40,30,w/2-120,h+215,-10,18);   // ваза
+  [[-.5,.2],[.1,-.3],[.45,.15]].forEach(([a,b])=>lpart(it,pm(0x6b5a48),3,3,w/2-120,h+220,-10,w/2-120+a*120,h+520+b*60,-10+b*80,5));   // сухие ветки
+  rpart(it,oak,260,14,150,-w/2+200,h+7,0,20,4);cpart(it,gd,48,26,-w/2+200,h+27,0,18);    // поднос и латунная чаша
+}
+// ---- компьютерный стол: дубовая столешница на чёрных рамах, тумба с ящиками, системный блок, монитор (два — при ширине от 160 см), клавиатура, мышь, лампа, растение, кружка
+let SCR=null,KBD=null;
+function screenTex(){return SCR||(SCR=ctex(512,288,g=>{const gr=g.createLinearGradient(0,0,512,288);gr.addColorStop(0,'#6f9481');gr.addColorStop(1,'#e4dad3');g.fillStyle=gr;g.fillRect(0,0,512,288);
+  g.fillStyle='rgba(255,255,255,.16)';g.beginPath();g.arc(410,50,130,0,7);g.fill();
+  const win=(x,y,w,h)=>{g.fillStyle='rgba(0,0,0,.16)';g.fillRect(x+5,y+7,w,h);g.fillStyle='#fbfaf8';g.fillRect(x,y,w,h);g.fillStyle='#ecedef';g.fillRect(x,y,w,18);['#e06c5a','#e8b84a','#6fb36a'].forEach((c,i)=>{g.fillStyle=c;g.beginPath();g.arc(x+11+i*12,y+9,4,0,7);g.fill()})};
+  win(40,34,270,180);g.fillStyle='#c9ced6';for(let i=0;i<7;i++)g.fillRect(56,66+i*18,120+((i*47)%70),7);g.fillStyle='#b8916a';g.fillRect(212,66,82,62);g.fillStyle='#4e625b';g.fillRect(212,138,82,8);
+  win(330,96,150,120);g.strokeStyle='#4e625b';g.lineWidth=2;g.strokeRect(344,126,120,76);g.beginPath();g.moveTo(404,126);g.lineTo(404,170);g.moveTo(344,160);g.lineTo(404,160);g.moveTo(430,170);g.lineTo(464,170);g.stroke();
+  g.fillStyle='rgba(30,35,40,.55)';g.fillRect(0,266,512,22);['#e4dad3','#6f9481','#b8743f','#c9a45c','#8f8a8c','#f1eeea'].forEach((c,i)=>{g.fillStyle=c;g.fillRect(186+i*24,270,16,14)})}))}
+function kbdTex(){return KBD||(KBD=ctex(512,160,g=>{g.fillStyle='#35363a';g.fillRect(0,0,512,160);g.fillStyle='#4a4b50';
+  for(let r=0;r<5;r++){const n=r===4?0:14+(r%2);for(let i=0;i<n;i++)g.fillRect(10+i*(492/n),10+r*29,492/n-5,24)}g.fillRect(130,126,250,24);g.fillRect(10,126,110,24);g.fillRect(392,126,110,24)}))}
+function buildDesk(it){
+  const {w,d}=it,H0=it.h-(it.c.hOff||0),t=25,oak=pm(PAL.oak),met=pm(PAL.black),tp=pm(PAL.taupe),fr=pm(0x9a8d88),gd=goldM(),blk=pm(0x1f1f22),gry=pm(0x3a3a3c),alu=pm(0xbfc3c7);
+  rpart(it,oak,w,t,d,0,H0-t/2,0,10,4);                                                  // столешница
+  [-1,1].forEach(a=>{const x=a*(w/2-60);[-1,1].forEach(b=>part(it,met,40,H0-t,40,x,(H0-t)/2,b*(d/2-70)));part(it,met,40,30,d-100,x,15,0);part(it,met,40,30,d-100,x,H0-t-15,0)});   // рамы
+  part(it,met,w-160,70,14,0,H0-t-55,-(d/2-50));                                         // кабель-канал
+  const pw=400,ph=520,px=w/2-80-pw/2-10;                                                // тумба с ящиками справа
+  part(it,tp,pw,ph,d-140,px,H0-t-ph/2-5,-10);
+  [0,1,2].forEach(i=>{const fh=(ph-20)/3,y=H0-t-15-fh/2-i*fh;rpart(it,fr,pw-12,fh-8,18,px,y,(d-140)/2-10+9,6,3);const hd=cpart(it,gd,6,pw*0.4,px,y+fh/2-38,(d-140)/2+12,10);hd.rotation.z=Math.PI/2});
+  const tx=-w/2+80+125;part(it,blk,200,450,430,tx,240,-20);part(it,gry,190,8,420,tx,469,-20);   // системный блок
+  part(it,new T.MeshBasicMaterial({color:0x9fe0c8}),6,300,4,tx+70,250,196);cpart(it,alu,9,6,tx,430,197,12).rotation.x=Math.PI/2;
+  const n=w>=1600?2:1;                                                                    // мониторы
+  for(let i=0;i<n;i++){const sub=new T.Group(),o={g:sub},a=n===2?(i?1:-1):0,mw=620,Ys=H0+140+185;
+    rpart(o,alu,240,10,180,0,H0+5,0,30,4);part(o,alu,50,280,24,0,H0+150,-45);            // подставка
+    rpart(o,blk,mw,370,26,0,Ys,-20,12,4);rpart(o,blk,mw*0.5,230,40,0,Ys,-50,20,8);        // корпус
+    const sc=new T.Mesh(new T.PlaneGeometry((mw-22)*M,(370-46)*M),new T.MeshBasicMaterial({map:screenTex()}));sc.position.set(0,(Ys+10)*M,-6.5*M);sub.add(sc);   // экран
+    sub.position.set(a*330*M,0,(-d/2+180)*M);sub.rotation.y=-a*0.18;it.g.add(sub)}
+  const kz=d/2-200,kb=new T.Mesh(new T.BoxGeometry(440*M,16*M,135*M),[gry,gry,new T.MeshLambertMaterial({map:kbdTex()}),gry,gry,gry]);kb.position.set(0,(H0+8)*M,kz*M);kb.rotation.x=0.03;it.g.add(kb);   // клавиатура
+  rpart(it,pm(0x2f3437),220,3,210,345,H0+1.5,kz,20,1);sph(it,pm(0xe9e9ea),32,340,H0+19,kz+10,1,0.5,1.6);   // коврик и мышь
+  if(n===1&&w>=1200){const lx=-w/2+130,lz=-d/2+120;cpart(it,met,70,18,lx,H0+9,lz,18);lpart(it,met,8,8,lx,H0+18,lz,lx+40,H0+400,lz+30,8);lpart(it,met,7,7,lx+40,H0+400,lz+30,lx+200,H0+440,lz+130,8);   // лампа
+    const hd=new T.Mesh(new T.CylinderGeometry(25*M,70*M,120*M,18),gd);hd.position.set((lx+215)*M,(H0+390)*M,(lz+140)*M);hd.rotation.z=-0.35;it.g.add(hd)}
+  const rx=w/2-110,rz=-d/2+110;cpart(it,fab(PAL.cream),55,110,rx,H0+55,rz,18);           // растение в горшке
+  [[0,170,0,70],[-45,140,25,55],[45,150,-20,55],[15,215,30,45],[-25,205,-30,45]].forEach(([dx,dy,dz,r])=>sph(it,fab(PAL.green),r,rx+dx,H0+dy,rz+dz,1,0.8,1));
+  const mx=w/2-90,mz=kz-160;cpart(it,fab(PAL.cognac),40,95,mx,H0+47,mz,16);part(it,fab(PAL.cognac),12,50,30,mx+46,H0+50,mz);   // кружка
+  if(w>=1200){const nb=rpart(it,fab(PAL.sage),210,12,290,-w/2+260,H0+6,d/2-210,10,3);nb.rotation.y=0.2;lpart(it,gd,4,4,-w/2+320,H0+16,d/2-310,-w/2+260,H0+16,d/2-120,6)}   // блокнот и ручка (на узком столе не помещается рядом с клавиатурой)
+}
+// ======== шкафы по фото: дуб с графитовыми фасадами, светло-серый с зеркалом и антресолями, белый с антресолями, книжный стеллаж
+// фасад: плита с зазором 3 мм; под фасадами тёмный корпус, поэтому зазоры читаются тёмными линиями
+function front(it,m,w,h,x,y,z){return rpart(it,m,w-4,h-4,18,x,y,z,3,2)}
+function shaker(it,m,w,h,x,y,z,e=55){ // рамка «шейкер» поверх фасада: четыре планки по краю
+  part(it,m,w-4,e,6,x,y+h/2-2-e/2,z);part(it,m,w-4,e,6,x,y-h/2+2+e/2,z);part(it,m,e,h-4-2*e,6,x-w/2+2+e/2,y,z);part(it,m,e,h-4-2*e,6,x+w/2-2-e/2,y,z)}
+function hbar(it,m,len,x,y,z,vert){const o=rpart(it,m,vert?14:len,vert?len:14,16,x,y,z,4,2);return o}   // ручка-скоба
+function buildWardrobeOak(it){
+  const {w,d,h}=it,oak=pm(0xc49a5e),ant=pm(0x56585b),dark=pm(0x2e2f31),zf=d/2-9,pl=80;
+  [-1,1].forEach(a=>part(it,oak,18,h,d,a*(w/2-9),h/2,0));part(it,oak,w,18,d,0,h-9,0);part(it,oak,w-36,pl,d-30,0,pl/2,-10);   // бока, крышка, цоколь
+  part(it,dark,w-36,h-18-pl,d-36,0,pl+(h-18-pl)/2,-18);                                // корпус за фасадами
+  const iw=w-36,cw=iw/4,x0=-iw/2,top=h-18,dh=250,nd=3,yd=pl+nd*dh;
+  [0,3].forEach(c=>front(it,ant,cw,top-pl,x0+cw*(c+0.5),pl+(top-pl)/2,zf));              // крайние двери в пол
+  [1,2].forEach(c=>front(it,ant,cw,top-yd-24,x0+cw*(c+0.5),yd+24+(top-yd-24)/2,zf));     // средние двери над ящиками
+  for(let i=0;i<nd;i++){const y0=pl+i*dh;front(it,ant,2*cw,dh-24,0,y0+(dh-24)/2,zf);part(it,oak,2*cw-10,22,12,0,y0+dh-12,zf-4)}   // ящики и дубовые профили-ручки над ними
+}
+let MIR=null;function mirrorTex(){return MIR||(MIR=ctex(256,512,g=>{const gr=g.createLinearGradient(0,0,256,0);gr.addColorStop(0,'#c9d2d8');gr.addColorStop(.35,'#eef2f4');gr.addColorStop(.55,'#b9c3ca');gr.addColorStop(.8,'#e3e8eb');gr.addColorStop(1,'#aeb8bf');g.fillStyle=gr;g.fillRect(0,0,256,512);
+  g.fillStyle='rgba(255,255,255,.35)';for(let i=0;i<5;i++)g.fillRect(30+i*44,0,10,512);const v=g.createLinearGradient(0,0,0,512);v.addColorStop(0,'rgba(255,255,255,.25)');v.addColorStop(.75,'rgba(0,0,0,0)');v.addColorStop(1,'rgba(160,130,90,.35)');g.fillStyle=v;g.fillRect(0,0,256,512)}))}
+function buildWardrobeMirror(it){
+  const {w,d,h}=it,col=pm(0xaab4c0),colD=pm(0x9aa5b2),blk=pm(0x1f1f22),inner=pm(0x5d6670),zf=d/2-9,pl=70,mz=430,cw=w/3,top=h-mz;
+  part(it,col,w,h-pl,d-18,0,pl+(h-pl)/2,-9);part(it,colD,w-20,pl,d-40,0,pl/2,-20);part(it,inner,w-30,h-pl-20,4,0,pl+(h-pl)/2,zf-11);   // корпус, цоколь
+  for(let c=0;c<3;c++){const x=-w/2+cw*(c+0.5);front(it,col,cw,mz,x,top+mz/2,zf);shaker(it,colD,cw-4,mz-4,x,top+mz/2,zf+10,45);hbar(it,blk,170,x,top+70,zf+20)}   // антресоли
+  const dh=180;[0,2].forEach(c=>{const xc=-w/2+cw*(c+0.5);
+    for(let i=0;i<2;i++){const y=pl+dh*i+dh/2;front(it,col,cw,dh,xc,y,zf);shaker(it,colD,cw-4,dh-4,xc,y,zf+10,35);hbar(it,blk,200,xc,y+dh/2-45,zf+20)}   // ящики
+    const yb=pl+2*dh,hd=top-yb;[-1,1].forEach(a=>{const x=xc+a*cw/4;front(it,col,cw/2,hd,x,yb+hd/2,zf);shaker(it,colD,cw/2-4,hd-4,x,yb+hd/2,zf+10,45)});
+    hbar(it,blk,300,xc+(c===0?cw/4-60:-cw/4+60),yb+hd*0.5,zf+20,true)});                // вертикальная ручка
+  const xm=0,hm=top-pl;front(it,col,cw,hm,xm,pl+hm/2,zf);                               // средняя дверь с зеркалом
+  const mr=new T.Mesh(new T.PlaneGeometry((cw-40)*M,(hm-40)*M),new T.MeshLambertMaterial({map:mirrorTex()}));mr.position.set(xm*M,(pl+hm/2)*M,(zf+10)*M);it.g.add(mr);
+}
+function buildWardrobeWhite(it){
+  const {w,d,h}=it,wh=pm(0xf3f3f1),whD=pm(0xe4e4e1),blk=pm(0x1f1f22),dark=pm(0x9c9c98),zf=d/2-9,pl=60,mz=430,top=h-mz,cw=w/4;
+  part(it,wh,w,h-pl,d-18,0,pl+(h-pl)/2,-9);part(it,whD,w-20,pl,d-40,0,pl/2,-20);part(it,dark,w-30,h-pl-20,4,0,pl+(h-pl)/2,zf-11);
+  for(let c=0;c<4;c++){const x=-w/2+cw*(c+0.5);front(it,wh,cw,mz,x,top+mz/2,zf);front(it,wh,cw,top-pl,x,pl+(top-pl)/2,zf);
+    hbar(it,blk,900,x+(c<2?1:-1)*(cw/2-45),pl+(top-pl)*0.42,zf+20,true)}               // длинные вертикальные ручки у середины
+  const sm=pm(0xc9c9c5);for(let c=1;c<4;c++)part(it,sm,3,h-pl,3,-w/2+cw*c,pl+(h-pl)/2,zf+9);part(it,sm,w,3,3,0,top,zf+9);   // стыки дверей
+}
+let BOOKS=[];function bookTex(i){return BOOKS[i]||(BOOKS[i]=ctex(256,128,g=>{const r=seeded(300+i*17),C=['#2b2b2b','#8e807b','#b8743f','#6f9481','#e4dad3','#f1eeea','#4e625b','#c9a45c','#7f958f','#a33b2e','#3a4a6b','#d6ccc3'];let x=0;
+  while(x<256){const bw=8+r()*16,c=C[Math.floor(r()*C.length)];g.fillStyle=c;g.fillRect(x,0,bw,128);g.fillStyle='rgba(255,255,255,.35)';g.fillRect(x+2,14,bw-4,3);g.fillRect(x+2,108,bw-4,3);g.fillStyle='rgba(0,0,0,.25)';g.fillRect(x+bw-1,0,1,128);x+=bw}}))}
+function books(it,w,h,dp,x,y,z,v){const pg=pm(0xefe9dc),sd=pm(0x6f655c),o=new T.Mesh(new T.BoxGeometry(w*M,h*M,dp*M),[sd,sd,pg,pg,new T.MeshLambertMaterial({map:bookTex(v)}),sd]);o.position.set(x*M,(y+h/2)*M,z*M);it.g.add(o);return o}
+const hash=n=>{n=Math.imul(n^(n>>>16),0x45d9f3b);n=Math.imul(n^(n>>>16),0x45d9f3b);n^=n>>>16;return (n>>>0)%2147483646+1};   // перемешивание номера ячейки
+function buildBookcase(it){
+  const {w,d,h}=it,ant=pm(0x2f3133),oak=pm(0xc8a36c),led=new T.MeshBasicMaterial({color:0xffe6bf}),t=22,pl=60,ih=h-pl-2*t,u=(w-6*t)/(3*1.35+2),rows=6,ch=(ih-(rows-1)*20)/rows;
+  part(it,ant,w,t,d,0,h-t/2,0);part(it,ant,w,t,d,0,pl+t/2,0);part(it,ant,w-20,pl,d-30,0,pl/2,-10);   // крышка, дно, цоколь
+  let x=-w/2;for(let c=0;c<5;c++){part(it,ant,t,h-pl,d,x+t/2,pl+(h-pl)/2,0);x+=t;
+    const ow=c%2===0,cw=ow?1.35*u:u,cx=x+cw/2,mi=ow?oak:ant;
+    part(it,mi,cw,ih,10,cx,pl+t+ih/2,-d/2+5);                                            // задняя стенка
+    for(let r=0;r<rows;r++){const yb=pl+t+r*(ch+20);if(r>0)part(it,mi,cw,20,d-14,cx,yb-10,4);
+      if(!ow)part(it,led,cw-30,6,10,cx,yb+ch-5,d/2-30);                                 // подсветка в тёмных секциях
+      const R=seeded(hash(c*7919+r*104729+12345)),k=R(),zc=-d/2+20+(d-60)/2-10;
+      if(k<0.5){let bx=cx-cw/2+12;const end=cx-cw/2+12+(cw-24)*(0.55+R()*0.4);while(bx<end-40){const n=Math.min(end-bx,60+R()*(cw*0.55)),bh=Math.min(ch-25,170+R()*90);books(it,n-6,bh,d-90,bx+n/2,yb,zc,Math.floor(R()*3));bx+=n+(R()<0.4?40+R()*60:4)}}
+      else if(k<0.8){const vx=cx+(R()-0.5)*cw*0.3,vc=[0xf1eeea,0x4e625b,0xe4dad3,0x2b2b2b][Math.floor(R()*4)];
+        if(R()<0.5){cpart(it,fab(vc),45+R()*20,Math.min(ch-40,150+R()*90),vx,yb+(Math.min(ch-40,150+R()*90))/2,zc,18)}else{sph(it,fab(vc),60,vx,yb+60,zc,1,1.1,1);cpart(it,fab(vc),22,40,vx,yb+135,zc,12)}
+        for(let i=0;i<3;i++)rpart(it,fab([PAL.cognac,PAL.linen,PAL.sage][i]),Math.min(cw*0.45,180),24,150,cx-cw*0.2*(R()<.5?1:-1),yb+12+i*24,zc+10,4,2)}   // стопка лёжа
+      else if(k<0.9){sph(it,goldM(),35,cx,yb+35,zc);cpart(it,ant,40,8,cx,yb+4,zc,12)}}  // шар-декор
+    x+=cw}
+  part(it,ant,t,h-pl,d,x+t/2,pl+(h-pl)/2,0);
+}
+// ---- ТВ-тумба по фото: белый корпус, рифлёные фасады (полосы светотени текстурой), латунные ручки, золотой каркас; сверху телевизор, ваза с сухоцветом, книги с цветком
+let FLUTE=null;function fluteTex(fw,fh){if(!FLUTE)FLUTE=ctex(32,4,g=>{const gr=g.createLinearGradient(0,0,32,0);gr.addColorStop(0,'#cfcfcb');gr.addColorStop(.18,'#f4f4f2');gr.addColorStop(.5,'#ffffff');gr.addColorStop(.82,'#e9e9e6');gr.addColorStop(1,'#c4c4c0');g.fillStyle=gr;g.fillRect(0,0,32,4)});
+  const t=FLUTE.clone();t.needsUpdate=true;t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(fw/32,1);return t}   // ребро 32 мм
+function fluted(it,w,h,x,y,z){const wh=pm(0xf3f3f1),o=new T.Mesh(new T.BoxGeometry((w-4)*M,(h-4)*M,18*M),[wh,wh,wh,wh,new T.MeshLambertMaterial({map:fluteTex(w,h)}),wh]);o.position.set(x*M,y*M,z*M);it.g.add(o);return o}
+function buildTvFluted(it){
+  const {w,d}=it,wh=pm(0xf3f3f1),inn=pm(0xe6e6e3),gd=goldM(),bl=pm(0x141416),base=130,bh=it.h-(it.c.hOff||0)-base-20,top=base+bh+20,zf=d/2-9,cw=(w-24)/3;
+  [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([a,b])=>part(it,gd,18,base,18,a*(w/2-30),base/2,b*(d/2-30)));[-1,1].forEach(b=>part(it,gd,18,base,18,0,base/2,b*(d/2-30)));   // ножки
+  [-1,1].forEach(b=>part(it,gd,w-42,16,16,0,base-8,b*(d/2-30)));[-1,0,1].forEach(a=>part(it,gd,16,16,d-60,a*(w/2-30),base-8,0));[-1,1].forEach(a=>part(it,gd,16,12,d-60,a*(w/2-30),40,0));   // рама и нижние перемычки
+  const sw=w/2-cw/2;[-1,1].forEach(a=>part(it,wh,sw,bh,d-20,a*(w/2-sw/2),base+bh/2,-10));rpart(it,wh,w+6,20,d,0,top-10,0,4,2);   // боковые секции и столешница (средняя собирается ниже, с нишей)
+  [-1,1].forEach(a=>{const x=a*cw;fluted(it,cw,bh-8,x,base+bh/2,zf);rpart(it,gd,160,10,14,x,base+bh-30,zf+16,3,2)});   // двери
+  const nh=bh*0.36,dh=bh-nh-8;part(it,wh,cw,dh+8,d-20,0,base+(dh+8)/2,-10);part(it,inn,cw,nh,14,0,base+dh+8+nh/2,-d/2+17);   // средняя секция: ящик и открытая ниша над ним
+  fluted(it,cw,dh,0,base+dh/2+2,zf);rpart(it,gd,140,10,14,0,base+dh-30,zf+16,3,2);       // ящик
+  const tw=Math.min(1230,w*0.68),th=tw*0.577,ty=top+70+th/2;                             // телевизор
+  [-1,1].forEach(a=>{const x=a*tw*0.42;bar(it,bl,x,top,40,x+a*25,top+70,0,14);bar(it,bl,x,top,-40,x+a*25,top+70,0,14)});
+  rpart(it,bl,tw,th,30,0,ty,0,6,3);part(it,pm(0x0b0c0e),tw-14,th-14,2,0,ty,16);
+  const vx=-w/2+150;cpart(it,fab(0xf1eeea),75,200,vx,top+100,-20,24);sph(it,fab(0xf1eeea),78,vx,top+190,-20,1,0.6,1);cpart(it,fab(0xf1eeea),35,60,vx,top+260,-20,16);   // ваза
+  [[-.5,.9],[-.2,1],[.1,1],[.3,.9],[.4,.8],[-.75,.75]].forEach(([a,k],i)=>{const ex=vx+a*130,ey=top+290+k*300,ez=-20+(i%2?40:-40);lpart(it,pm(0xa48b6a),3,3,vx,top+280,-20,ex,ey,ez,5);sph(it,fab(0xd9c7a8),40,ex,ey+40,ez,1,2.4,1)});   // сухоцвет
+  const bx=w/2-200;rpart(it,fab(0xe4dad3),240,24,170,bx,top+12,0,4,2);rpart(it,fab(0xf1eeea),220,20,150,bx+8,top+34,0,4,2);   // книги
+  cpart(it,fab(0xf3f2f0),65,70,bx,top+80,0,20);[[0,0],[-35,15],[35,-10],[10,30],[-15,-30]].forEach(([dx,dz])=>sph(it,fab(PAL.green),40,bx+dx,top+130,dz,1,0.7,1));   // цветок
+}
+// ---- журнальный столик по фото: толстая столешница из старого дуба (текстура волокон), чёрные П-образные опоры охватывают торцы; ноутбук, будильник на книге, ваза с цветами
+let GRAIN=null;function grainTex(rw,rh){if(!GRAIN)GRAIN=ctex(512,256,g=>{const r=seeded(31);g.fillStyle='#8c7862';g.fillRect(0,0,512,256);
+  for(let i=0;i<70;i++){const y=r()*256,a=.05+r()*.12,c=r()<.5?'60,45,32':'190,170,145';g.strokeStyle=`rgba(${c},${a})`;g.lineWidth=1+r()*3;g.beginPath();g.moveTo(0,y);for(let x=0;x<=512;x+=32)g.lineTo(x,y+Math.sin(x/70+i)*3+(r()-.5)*2);g.stroke()}
+  for(let i=0;i<6;i++){const x=r()*512,y=r()*256;g.strokeStyle='rgba(70,52,36,.35)';g.lineWidth=1.5;g.beginPath();g.ellipse(x,y,22+r()*20,5+r()*4,0,0,7);g.stroke()}});
+  const t=GRAIN.clone();t.needsUpdate=true;t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(rw/1200,rh/600);return t}
+function buildCoffeeOak(it){
+  const {w,d,h}=it,blk=pm(0x1c1c1e),alu=pm(0xc9cbce),th=60,wood=new T.MeshLambertMaterial({map:grainTex(w,d)}),side=new T.MeshLambertMaterial({map:grainTex(w,th*4)});
+  const tp=new T.Mesh(new T.BoxGeometry(w*M,th*M,d*M),[side,side,wood,wood,side,side]);tp.position.y=(h-th/2)*M;it.g.add(tp);   // столешница
+  const t=50,lx=w/2-110,pz=d/2+t/2+1;[-1,1].forEach(a=>{const x=a*lx;[-1,1].forEach(b=>part(it,blk,t,h-1,t,x,(h-1)/2,b*pz));part(it,blk,t,t,2*pz+t,x,t/2,0)});   // П-образные опоры снаружи столешницы с зазором 1 мм: без совпадающих граней, не мерцают
+  // ноутбук: корпус с клавиатурой и тачпадом, крышка на петле у заднего края откинута назад, экран к сидящему
+  const ly=h,lx2=w*0.1,lz=-d*0.05,al=pm(0xb9bcc0),a=0.3;rpart(it,al,330,12,225,lx2,ly+6,lz,10,3);part(it,pm(0x2a2b2e),290,1,110,lx2,ly+12.5,lz-30);part(it,pm(0xa9acb0),110,1,65,lx2,ly+12.5,lz+70);
+  const lid=new T.Group(),o={g:lid};rpart(o,al,330,220,7,0,110,0,10,3);part(o,pm(0x101114),306,196,1,0,112,4);
+  lid.position.set(lx2*M,(ly+12)*M,(lz-112)*M);lid.rotation.x=-a;it.g.add(lid);
+  const vx=w*0.38,vz=-d*0.22;cpart(it,fab(0xece4dc),48,140,vx,ly+70,vz,20);              // ваза
+  [[0,0,0xe9a6b8],[45,20,0xf4eef0],[-40,15,0xe9a6b8],[20,-40,0xd98aa1],[-15,40,0xf4eef0],[35,-15,0xe9a6b8],[-35,-30,0xf4eef0]].forEach(([dx,dz,c],i)=>sph(it,fab(c),34,vx+dx,ly+215+(i%3)*18,vz+dz));
+  [[-60,0],[60,10],[0,-55]].forEach(([dx,dz])=>sph(it,fab(PAL.green),26,vx+dx,ly+180,vz+dz,1.4,0.5,0.8));
+}
+// ======== пол в комнатах: процедурные текстуры (холст 1024×512 на 2,56×1,28 м, 400 пикс/м)
+function plankTex(pal,seam,grain,rows=8){return ctex(1024,512,g=>{const rh=512/rows;
+  for(let r=0;r<rows;r++){const off=(r*379)%512;for(let p=0;p<2;p++){const col=pal[Math.floor(rnd()*pal.length)],gr=[0,1,2,3,4,5].map(()=>rnd()*rh);
+    for(let n=-1;n<=1;n++){const x=off+p*512+n*1024;g.fillStyle=col;g.fillRect(x,r*rh,512,rh);g.fillStyle=`rgba(60,40,20,${grain})`;gr.forEach(q=>g.fillRect(x,r*rh+q,512,1));
+      g.fillStyle=`rgba(40,28,15,${seam})`;g.fillRect(x,r*rh,512,2);g.fillRect(x,r*rh,2,rh)}}}})}
+function herringTex(){return ctex(1024,512,g=>{ // ёлочка 45°: дощечка 11×45 см; после поворота узор повторяется ровно через 1024×512 пикс
+  const pal=['#cec4bc','#d6ccc3','#c6bbb2','#d2c7bd','#c9beb4'],W=64/Math.SQRT2,L=4*W;g.fillStyle='#bfb3a9';g.fillRect(0,0,1024,512);g.save();g.rotate(-Math.PI/4);
+  const pl=(x,y,w,h,i)=>{g.fillStyle=pal[i%5];g.fillRect(x,y,w,h);g.fillStyle='rgba(90,70,50,.09)';for(let q=0;q<3;q++)g.fillRect(x+(w>h?0:(i*7+q*13)%w),y+(w>h?(i*5+q*11)%h:0),w>h?w:1,w>h?1:h);g.strokeStyle='rgba(70,55,40,.4)';g.lineWidth=1.5;g.strokeRect(x,y,w,h)};
+  for(let m=-6;m<=6;m++)for(let k=-30;k<=40;k++){const u=k*W+m*L,v=k*W-m*L;pl(u,v,L,W,(k*3+m*7+50)*1);pl(u,v+W,W,L,(k*5+m*3+51))}
+  g.restore()})}
+function cementTex(){return ctex(1024,512,g=>{g.fillStyle='#cbc7c1';g.fillRect(0,0,1024,512);
+  for(let i=0;i<90;i++){const x=rnd()*1024,y=rnd()*512,r=60+rnd()*180,l=rnd()<.5;for(const dx of[-1024,0,1024])for(const dy of[-512,0,512]){const gr=g.createRadialGradient(x+dx,y+dy,0,x+dx,y+dy,r);gr.addColorStop(0,l?'rgba(255,255,255,.10)':'rgba(90,85,80,.08)');gr.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=gr;g.fillRect(x+dx-r,y+dy-r,2*r,2*r)}}
+  for(let i=0;i<9000;i++){g.fillStyle=rnd()<.5?'rgba(0,0,0,.05)':'rgba(255,255,255,.06)';g.fillRect(rnd()*1024,rnd()*512,1.5,1.5)}})}
+const FLOORS=[['base','Доска светлая',()=>MAT.wood.map],['herring','Дуб ёлочкой',herringTex],['oak','Дуб натуральный',()=>plankTex(['#b8916a','#b08862','#c09a72','#a98059','#bb946c'],.35,.12)],
+  ['walnut','Орех',()=>plankTex(['#6b4a35','#5f412e','#76523b','#664632','#704d37'],.45,.16)],['grey','Серый ламинат',()=>plankTex(['#a7a39e','#9e9a95','#b0aca7','#a39f9a','#aaa6a1'],.3,.08,6)],['cement','Микроцемент',cementTex]];
+const FT={},SW={};let floorKey='base';
+function setFloor(k){const f=FLOORS.find(x=>x[0]===k);if(!f)return;const t=FT[k]||(FT[k]=f[2]());if(t){MAT.wood.map=t;MAT.wood.needsUpdate=true}floorKey=k;renderFloors()}
+function renderFloors(){$('floors').innerHTML=FLOORS.map(([k,n,fn])=>{let u='';try{const t=FT[k]||(FT[k]=fn()),im=t&&t.image;if(im&&im.width){if(!SW[k]){const c=document.createElement('canvas');c.width=180;c.height=120;c.getContext('2d').drawImage(im,0,0,450,300,0,0,180,120);SW[k]=c.toDataURL('image/jpeg',.85)}u=SW[k]}}catch(e){}
+  return `<button class="fsw" data-k="${k}" aria-pressed="${k===floorKey}"><span style="background-image:url(${u})"></span>${n}</button>`}).join('')}
+function build(it){ // (пере)строит внешний вид по текущим размерам: из GLB или из запасного кода
+  while(it.g.children.length)it.g.remove(it.g.children[0]);
+  const m=it.c.model;
+  if(m){const o=m.s.clone(true),wr=new T.Group();o.position.x-=m.ct.x;o.position.y-=m.min.y;o.position.z-=m.ct.z;wr.add(o);
+    wr.scale.set(it.w*M/m.sz.x,it.h*M/m.sz.y,it.d*M/m.sz.z);it.g.add(wr)}
+  else it.c.build(it);
+  it.mats=[];
+  it.g.traverse(o=>{if(o.isMesh){o.userData.it=it;o.castShadow=o.receiveShadow=true;
+    o.material=Array.isArray(o.material)?o.material.map(x=>x.clone()):o.material.clone();[].concat(o.material).forEach(x=>it.mats.push(x))}});
+  it.g.rotation.y=-angOf(it)*Math.PI/180;paint(it,false);if(it.c.wall)opApply(it);
+  if(it.tint!=null)applyTint(it);
+}
+// ======== цвет мебели: перекрашивается основная часть — цвет с наибольшей площадью поверхности (обивка, фасады, корпус)
+const TINTS=[['Белый',0xf3f3f1],['Лён',0xf1eeea],['Крем',0xe4dad3],['Беж',0xcdc1b6],['Серый',0x8f8a8c],['Тауп',0x8e807b],['Мокко',0x887264],['Коньяк',0xb8743f],['Дуб',0xb8916a],
+  ['Шалфей',0x7f958f],['Зелёный',0x6f9481],['Тёмно-зелёный',0x4e625b],['Синий',0x2f3550],['Графит',0x2b2b2b]];
+function colorKeys(o,m,cb){ // для каждого треугольника меша: ключ цвета и площадь (в своей системе координат, с учётом масштаба)
+  const g=o.geometry,p=g.attributes.position,ix=g.index,col=g.attributes.color,s=new T.Vector3();o.getWorldScale(s);
+  const A=new T.Vector3(),B=new T.Vector3(),C=new T.Vector3(),n=ix?ix.count:p.count,mats=[].concat(o.material);
+  const groups=Array.isArray(o.material)&&g.groups.length?g.groups:[{start:0,count:n,materialIndex:0}];
+  for(const gr of groups){const mt=mats[gr.materialIndex]||mats[0];if(!mt||mt.isMeshBasicMaterial||mt.metalness>0.5)continue;const vc=mt.vertexColors&&col;
+    for(let i=gr.start;i<gr.start+gr.count;i+=3){const a=ix?ix.getX(i):i,b=ix?ix.getX(i+1):i+1,c=ix?ix.getX(i+2):i+2;
+      A.fromBufferAttribute(p,a).multiply(s);B.fromBufferAttribute(p,b).multiply(s);C.fromBufferAttribute(p,c).multiply(s);const ar=B.sub(A).cross(C.sub(A)).length()/2;
+      const key=vc?'v'+Math.round(col.getX(a)*255)+','+Math.round(col.getY(a)*255)+','+Math.round(col.getZ(a)*255):'m'+(mt.userData.c0??mt.color.getHex())+(mt.map?'t':'');cb(key,ar,mt,a)}}}
+function mainKey(it){const S=new Map();it.g.updateMatrixWorld(true);it.g.traverse(o=>{if(o.isMesh)colorKeys(o,null,(k,a)=>S.set(k,(S.get(k)||0)+a))});
+  let best=null,ba=0;S.forEach((a,k)=>{if(a>ba){ba=a;best=k}});return best}
+function applyTint(it){
+  if(it.c.tintName&&it.c.model){const tc=it.tint==null?null:new T.Color(it.tint).convertSRGBToLinear();   // у модели указана перекрашиваемая часть по имени материала
+    it.g.traverse(o=>{if(o.isMesh)[].concat(o.material).forEach(m=>{if(m.name!==it.c.tintName)return;if(m.userData.c0==null)m.userData.c0=m.color.getHex();tc?m.color.copy(tc):m.color.setHex(m.userData.c0)})});return}
+  // основной цвет запоминается для вида мебели; после загрузки GLB определяется заново
+  if(!it.c.tk||it.c.tkm!==!!it.c.model){it.c.tk=mainKey(it);it.c.tkm=!!it.c.model}const key=it.c.tk;if(!key)return;const glb=!!it.c.model;
+  const tc=it.tint==null?null:new T.Color(it.tint);if(tc&&glb)tc.convertSRGBToLinear();   // у GLB цвета линейные, у встроенных — как в палитре
+  it.g.traverse(o=>{if(!o.isMesh)return;
+    [].concat(o.material).forEach(m=>{if(m.isMeshBasicMaterial||!m.color)return;if(m.userData.c0==null)m.userData.c0=m.color.getHex();
+      if(!m.vertexColors&&'m'+m.userData.c0+(m.map?'t':'')===key)tc?m.color.copy(tc):m.color.setHex(m.userData.c0)});
+    const col=o.geometry.attributes.color;if(key[0]!=='v'||!col||![].concat(o.material).some(m=>m.vertexColors))return;
+    if(!o.userData.ownGeo){o.geometry=o.geometry.clone();o.userData.ownGeo=true;o.userData.c0=o.geometry.attributes.color.array.slice()}
+    const c=o.geometry.attributes.color,c0=o.userData.c0,[r,g,b]=key.slice(1).split(',').map(Number);
+    for(let i=0;i<c.count;i++){const j=i*c.itemSize;if(Math.round(c0[j]*255)===r&&Math.round(c0[j+1]*255)===g&&Math.round(c0[j+2]*255)===b){if(tc){c.array[j]=tc.r;c.array[j+1]=tc.g;c.array[j+2]=tc.b}else{c.array[j]=c0[j];c.array[j+1]=c0[j+1];c.array[j+2]=c0[j+2]}}}
+    c.needsUpdate=true})}
+function renderTints(){const it=sel,cust=!!it&&it.tint!=null&&!TINTS.some(t=>t[1]===it.tint),hex=c=>'#'+c.toString(16).padStart(6,'0');
+  $('rowC').innerHTML=`<button class="sw reset" data-c="" title="Как было" aria-label="Как было" aria-pressed="${!!it&&it.tint==null}"></button>`+
+  `<label class="sw pick" title="Любой цвет" aria-pressed="${cust}"${cust?` style="--pc:${hex(it.tint)}"`:''}><input type="color" aria-label="Любой цвет" value="${cust?hex(it.tint):'#7f958f'}"></label>`+
+  TINTS.map(([n,c])=>`<button class="sw" data-c="${c}" title="${n}" aria-label="${n}" aria-pressed="${!!it&&it.tint===c}" style="background:${hex(c)}"></button>`).join('')}
+// точка на полу в центре экрана: сюда (или в ближайшее свободное место) ставится новая мебель
+function viewPoint(){
+  const p=new T.Vector3();ray.setFromCamera(new T.Vector2(0,0),cur);
+  return ray.ray.intersectPlane(new T.Plane(new T.Vector3(0,1,0),0),p)?[p.x/M,-p.z/M]:[11000,2900];
+}
+function addItem(c,at){ // at: точка на плане [x,y] (мм); без неё предмет ставится в центр экрана
+  const it={c,w:c.w,d:c.d,h:c.h,rot:0,x:0,y:0,g:new T.Group(),mats:[]},s=at&&valid(it,at[0],at[1])?at:findSpot(it,...(at||viewPoint()),at?1500:1e9);
+  if(!s){say(at?'Здесь нет места для этого предмета: нажмите в другом месте':'Для этого предмета не нашлось свободного места');return false}
+  pushHist(c.wall?'новая перегородка':'добавление: '+c.name.toLowerCase());put(it,s[0],s[1]);build(it);furn.add(it.g);items.push(it);select(it);
+  say(c.wall?'Перегородка добавлена. Перетащите её; длина регулируется ползунком, проём — кнопка «Добавить дверь»':c.name+' добавлен. Перетащите, если нужно поправить; красный цвет означает, что мешает стена или мебель');
+  return true;
+}
+function placeAt(e){ // короткое нажатие в режиме добавления мебели
+  setNdc(e);const p=new T.Vector3();if(!ray.ray.intersectPlane(new T.Plane(new T.Vector3(0,1,0),0),p))return;
+  const px=p.x/M,py=-p.z/M;if(!inFloor(px,py)){say('Нажмите на пол внутри квартиры');return}
+  if(addItem(placeMode,[px,py]))setPlace(null);
+}
+function rotateSel(){
+  if(!sel)return;const it=sel,s0=snap();it.rot=(it.rot+1)&3;
+  if(!valid(it,it.x,it.y)){const s=findSpot(it,it.x,it.y,900);if(s)put(it,s[0],s[1]);else{it.rot=(it.rot+3)&3;say('Здесь не повернуть: мешают стены или мебель');return}}
+  if(it.c.wall){const m=magnet(it,it.x,it.y);put(it,m[0],m[1])}
+  it.g.rotation.y=-angOf(it)*Math.PI/180;pushHist('поворот',s0);syncPanel();
+}
+function setAngle(deg){ // ползунок «Поворот» и клавиши Q/E: предмет поворачивается вокруг центра; если не помещается, ищем место рядом
+  if(!sel||sel.c.wall)return false;const it=sel,r0=it.rot,f0=it.fa||0,x0=it.x,y0=it.y;deg=((Math.round(deg/ANG_STEP)*ANG_STEP)%360+360)%360;
+  it.rot=Math.floor(deg/90);it.fa=deg%90;
+  if(!valid(it,it.x,it.y)){const s=nearSpot(it,it.x,it.y,ANG_SHIFT);if(s)put(it,s[0],s[1]);else{it.rot=r0;it.fa=f0;put(it,x0,y0);syncPanel();say('Здесь не повернуть: мешают стены или мебель');return false}}
+  it.g.rotation.y=-angOf(it)*Math.PI/180;syncPanel();return true}
+function removeSel(){if(!sel)return;pushHist('удаление');furn.remove(sel.g);items.splice(items.indexOf(sel),1);select(null)}
+// ---- кнопка «Назад»: перед каждым изменением запоминаем всю расстановку (мебель, перегородки, пол, снос стен); отмена восстанавливает её целиком
+const HIST_MAX=50,HIST_KEYS=['w','d','h','x','y','rot','fa','tint','dr','dw','o','jb','orig'],hist=[];
+function snap(){return{items:items.map(i=>{const o={cid:i.c===PART?'partition':i.c.id};HIST_KEYS.forEach(k=>{if(i[k]!=null)o[k]=i[k]});return o}),floor:floorKey,demo:$('demo').getAttribute('aria-pressed')==='true'}}
+const sameSnap=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+function pushHist(label,s0){const s=s0||snap();if(hist.length&&sameSnap(hist[hist.length-1].s,s))return;hist.push({label,s});if(hist.length>HIST_MAX)hist.shift();$('undo').disabled=false}
+function undo(){
+  const h=hist.pop();$('undo').disabled=!hist.length;if(!h){say('Отменять нечего');return}
+  if(placeMode)setPlace(null);if(doorMode)setDoorMode(false);if(drag){drag.ctl.enabled=true;drag=null}
+  items.forEach(i=>furn.remove(i.g));items.length=0;select(null);
+  h.s.items.forEach(o=>{const c=o.cid==='partition'?PART:CATALOG.find(c=>c.id===o.cid);if(!c)return;
+    const it={c,w:c.w,d:c.d,h:c.h,rot:0,x:0,y:0,tint:null,g:new T.Group(),mats:[]};HIST_KEYS.forEach(k=>{if(o[k]!=null)it[k]=o[k]});
+    put(it,it.x,it.y);build(it);furn.add(it.g);items.push(it)});
+  if(h.s.floor!==floorKey)setFloor(h.s.floor);
+  $('demo').setAttribute('aria-pressed',h.s.demo);
+  say('Отменено: '+h.label);
+}
+// притягивает концы перегородки к стене или мебели, если зазор меньше maxGap (мм); больший зазор считается осознанным
+// магнит перегородок: рядом (до 12 см) с перпендикулярной перегородкой или встроенной стеной перегородка прижимается к ней вплотную: концом к грани (Т-стык), своей боковой гранью к торцу (тоже Т-стык), а если кромки у края, выравниваем их (угол 90°). Параллельно встроенной стене боковая грань прижимается вплотную
+function snapPart(it,x,y){
+  const S=120,r=rect(it,x,y),v=!!(it.rot&1),A0=v?1:0,A1=v?3:2,B0=v?0:1,B1=v?2:3;
+  const cand=[];
+  items.forEach(o=>{if(o!==it&&o.c.wall)cand.push({q:rect(o,o.x,o.y),qv:!!(o.rot&1),w:false,ext:0})});
+  OB.forEach(o=>{if(!o.wall)return;const useP=it.c.wall&&o.p,q=useP?o.p:o;cand.push({q,qv:(q[3]-q[1])>(q[2]-q[0]),w:true,ext:useP?150:0})});   // ext: у окон перегородка заходит в нишу до рамы
+  let bd=null,bl=null;                                             // лучший сдвиг вдоль длины и поперёк
+  const setD=d=>{if(bd===null||Math.abs(d)<Math.abs(bd))bd=d},setL=l=>{if(bl===null||Math.abs(l)<Math.abs(bl))bl=l};
+  for(const {q,qv,w,ext} of cand){
+    if(qv===v){                                                       // параллельная: только встроенные стены
+      if(!w||r[A0]>=q[A1]||r[A1]<=q[A0])continue;                    // должны перекрываться по длине
+      const g1=q[B0]-r[B1],g2=r[B0]-q[B1];
+      if(Math.abs(g1)<=S&&Math.abs(g1)>0.01)setL(g1);
+      if(Math.abs(g2)<=S&&Math.abs(g2)>0.01)setL(-g2);
+      continue}
+    const overA=r[A0]<q[A1]&&r[A1]>q[A0];                             // перпендикулярная
+    if(overA){                                                        // боковая грань P рядом с торцом Q
+      const e1=q[B1]-r[B0],e2=q[B0]-r[B1];
+      let hit=false;
+      if(Math.abs(e1)<=S&&Math.abs(e1)>0.01&&r[B0]>=q[B0]){setL(e1);hit=true}
+      if(Math.abs(e2)<=S&&Math.abs(e2)>0.01&&r[B1]<=q[B1]){setL(e2);hit=true}
+      if(hit){                                                         // угол из двух перегородок: конец P вровень с дальней гранью Q
+        if(Math.abs(r[A1]-q[A1])<=S)setD(q[A1]-r[A1]);else if(Math.abs(r[A0]-q[A0])<=S)setD(q[A0]-r[A0]);}
+      continue}
+    if(r[B0]>q[B1]+S||r[B1]<q[B0]-S)continue;                         // конец P рядом с гранью Q
+    const g1=q[A0]-r[A1],g2=r[A0]-q[A1];let d=null;
+    if(Math.abs(g1)<=S+ext)d=g1;
+    if(Math.abs(g2)<=S+ext&&(d===null||Math.abs(g2)<Math.abs(d)))d=-g2;
+    if(d===null)continue;
+    setD(d);
+    if(Math.abs(r[B0]-q[B0])<=S)setL(q[B0]-r[B0]);else if(Math.abs(r[B1]-q[B1])<=S)setL(q[B1]-r[B1]);
+  }
+  return bd===null&&bl===null?null:{d:bd||0,l:bl||0,v};
+}
+function magnet(it,x,y){ // положение после притягивания (или прежнее, если притягиваться не к чему или не помещается)
+  const m=it.c.wall?snapPart(it,x,y):null;if(!m)return[x,y];
+  const at=(d,l)=>m.v?[x+l,y+d]:[x+d,y+l];
+  for(const [d,l] of[[m.d,m.l],[m.d,0],[0,m.l]]){if(!d&&!l)continue;const p=at(d,l);if(valid(it,p[0],p[1]))return p}
+  return[x,y];
+}
+function closeGaps(it,maxGap=120,only=0){ // only: дотягивать только этот конец (-1 или 1)
+  const aY=!!(it.rot&1);
+  for(const sg of only?[only]:[-1,1]){
+    const L0=it.w,x0=it.x,y0=it.y,at=e=>[x0+(aY?0:sg*e/2),y0+(aY?sg*e/2:0)];
+    it.w=L0+maxGap;const free=valid(it,...at(maxGap));it.w=L0;
+    if(free)continue;
+    let lo=0,hi=maxGap;
+    for(let i=0;i<14;i++){const m=(lo+hi)/2;it.w=L0+m;if(valid(it,...at(m)))lo=m;else hi=m}
+    it.w=L0+lo;const p=at(lo);put(it,p[0],p[1]);
+  }
+}
+function fitShift(it,k,ox,oy,g){ // минимальный сдвиг вдоль меняемого размера, при котором предмет помещается (точность ~0.01 мм, чтобы вставал вплотную к стене)
+  const ax=axes(it)[k==='w'?0:1],at=s=>[ox+s*ax[0],oy+s*ax[1]];   // сдвиг вдоль своей оси предмета (у повёрнутого — наклонной)
+  if(valid(it,...at(0)))return at(0);
+  for(let d=10;d<=g;d+=10)for(const sg of[-1,1]){
+    if(!valid(it,...at(sg*d)))continue;
+    let a=sg*(d-10),b=sg*d;
+    for(let i=0;i<10;i++){const m=(a+b)/2;if(valid(it,...at(m)))b=m;else a=m}
+    return at(b);
+  }
+  return null;
+}
+// концы перегородки, которыми она состыкована: -1 (меньшая координата) и 1. Стык: конец упирается в препятствие
+// или боковая грань у самого конца касается перпендикулярной перегородки или встроенной стены (угол 90°)
+function anchors(it){
+  const aY=!!(it.rot&1),A0=aY?1:0,A1=aY?3:2,B0=aY?0:1,B1=aY?2:3,r=rect(it,it.x,it.y),L=it.w,res={'-1':false,'1':false};
+  for(const sg of[-1,1]){it.w=L+4;const ok=valid(it,it.x+(aY?0:sg*2),it.y+(aY?sg*2:0));it.w=L;if(!ok)res[sg]=true}
+  const qs=items.filter(o=>o!==it&&o.c.wall).map(o=>rect(o,o.x,o.y)).concat(OB.filter(o=>o.wall).map(o=>o.p||o));
+  for(const q of qs){
+    if(((q[3]-q[1])>(q[2]-q[0]))===aY)continue;                                     // параллельные не держат конец
+    const lo=Math.max(r[A0],q[A0]),hi=Math.min(r[A1],q[A1]);
+    if(hi-lo<=1||!(Math.abs(q[B0]-r[B1])<=1||Math.abs(r[B0]-q[B1])<=1))continue;  // нет касания боковой гранью
+    if(lo-r[A0]<=1)res[-1]=true;if(r[A1]-hi<=1)res[1]=true;
+  }
+  return res;
+}
+// длина состыкованной перегородки: конец sg стоит на месте, меняется только противоположный
+function resizeAnchored(it,v,sg){
+  const old=it.w,aY=!!(it.rot&1),e=(aY?it.y:it.x)+sg*old/2,at=L=>aY?[it.x,e-sg*L/2]:[e-sg*L/2,it.y];
+  const fits=L=>{it.w=L;const ok=valid(it,...at(L));it.w=old;return ok};
+  let L=v;
+  if(!fits(v)){if(v<old)return false;let lo=old,hi=v;for(let i=0;i<14;i++){const m=(lo+hi)/2;fits(m)?lo=m:hi=m}L=lo}
+  const p=at(L);it.w=L;put(it,p[0],p[1]);it.anc=sg;
+  if(v>old)closeGaps(it,120,-sg);                                                  // свободный конец дотягивается до стены, если она рядом
+  build(it);syncPanel();
+  if(v>old&&it.w<v-1)say('Больше не поместится: мешают стена или мебель');
+  return true;
+}
+function resizeSel(k,v){ // у перегородки с проёмом при изменении длины проём остаётся на месте (насколько позволяет длина)
+  if(sel&&sel.dr&&k==='w'){const it=sel,ax=!!(it.rot&1),dir=it.rot===0||it.rot===3?1:-1,wo=(ax?it.y:it.x)+dir*(it.o||0);
+    resizeCore(k,v);it.o=((ax?it.y:it.x)-wo)*-dir;build(it);syncPanel();return}
+  if(sel&&sel.c.round&&k==='w'){const it=sel;resizeCore('w',v);resizeCore('d',it.w);if(it.d!==it.w)resizeCore('w',it.d);return}   // круг остаётся кругом
+  resizeCore(k,v);
+}
+function resizeCore(k,v){
+  if(!sel)return;const it=sel,old=it[k],ox=it.x,oy=it.y;
+  if(it.c.wall&&k==='w'){const a=anchors(it),one=a[-1]!==a[1];
+    if(one||(a[-1]&&v<old)){if(resizeAnchored(it,v,one?(a[-1]?-1:1):(it.anc||-1)))return}}
+  it[k]=v;let pos=fitShift(it,k,ox,oy,Math.abs(v-old)+10);
+  if(!pos&&it.c.wall&&v>old){ // перегородка тянется до упора: берём самую большую длину, которая ещё помещается
+    let lo=old,hi=v,best=null;
+    for(let i=0;i<12;i++){const m=(lo+hi)/2;it[k]=m;const p=fitShift(it,k,ox,oy,Math.abs(m-old)+10);if(p){lo=m;best=p}else hi=m}
+    it[k]=lo;pos=best;
+  }
+  if(!pos){it[k]=old;syncPanel();say('Больше не поместится: мешают стена или мебель');return}
+  put(it,pos[0],pos[1]);if(it.c.wall&&v>old){closeGaps(it);const m=magnet(it,it.x,it.y);put(it,m[0],m[1])}build(it);syncPanel();
+}
+// ползунки: состояние до начала движения запоминаем один раз, в историю кладём по окончании (change), если что-то изменилось
+let slS0=null;['sW','sD','sP'].forEach(id=>{$(id).addEventListener('input',()=>{if(!slS0)slS0=snap()},true);$(id).addEventListener('change',()=>{if(slS0&&!sameSnap(slS0,snap()))pushHist('изменение размера',slS0);slS0=null})});
+$('sW').oninput=e=>resizeSel('w',+e.target.value);$('sD').oninput=e=>{const v=+e.target.value;if(sel&&sel.dr){sel.dw=Math.max(DOOR_MIN,Math.min(v,DOOR_MAX,sel.w-2*jb(sel)));build(sel);syncPanel();return}resizeSel('d',v)};
+// «любой цвет»: системная палитра; пока её крутят, цвет меняется сразу, в историю попадает один раз, когда выбор закончен
+$('rowC').addEventListener('pointerdown',e=>{if(e.target.type==='color'&&PHONE.matches)focusSel(true)});
+let cS0=null;$('rowC').addEventListener('input',e=>{if(e.target.type!=='color'||!sel)return;if(!cS0)cS0=snap();sel.tint=parseInt(e.target.value.slice(1),16);applyTint(sel);
+  const l=e.target.parentNode;l.style.setProperty('--pc',e.target.value);$('rowC').querySelectorAll('.sw').forEach(b=>b.setAttribute('aria-pressed',b===l))});
+$('rowC').addEventListener('change',e=>{if(e.target.type!=='color')return;if(cS0&&!sameSnap(cS0,snap()))pushHist('цвет',cS0);cS0=null});
+$('rowC').onclick=e=>{const b=e.target.closest('.sw');if(!b||!sel||b.classList.contains('pick'))return;pushHist('цвет');sel.tint=b.dataset.c===''?null:+b.dataset.c;applyTint(sel);renderTints()};
+// высота корпуса (столы, шкафы, тумбы): на плане ничего не меняется, перестраивается только вид; у стола с монитором и ТВ-тумб надстройка hOff едет вместе со столешницей
+let hS0=null;$('sH').addEventListener('input',()=>{if(!hS0)hS0=snap()},true);$('sH').addEventListener('change',()=>{if(hS0&&!sameSnap(hS0,snap()))pushHist('высота',hS0);hS0=null});
+$('sH').oninput=e=>{if(!sel||!sel.c.hr)return;sel.h=+e.target.value+(sel.c.hOff||0);build(sel);$('vH2').textContent=Math.round(+e.target.value)/10+' см'};
+let aS0=null;$('sA').addEventListener('input',()=>{if(!aS0)aS0=snap()},true);$('sA').addEventListener('change',()=>{if(aS0&&!sameSnap(aS0,snap()))pushHist('поворот',aS0);aS0=null});
+$('sA').oninput=e=>setAngle(+e.target.value);
+$('sP').oninput=e=>{if(sel&&sel.dr){sel.o=+e.target.value;build(sel);syncPanel()}};
+$('bOk').onclick=()=>select(null);$('bRot').onclick=rotateSel;$('bDel').onclick=removeSel;$('addP').onclick=()=>addItem(PART);
+$('floors').onclick=e=>{const b=e.target.closest('.fsw');if(b&&b.dataset.k!==floorKey){pushHist('пол');setFloor(b.dataset.k)}};
+// дверной проём: кнопка включает режим, следующее нажатие на перегородку ставит проём в эту точку (повторное нажатие переносит его)
+let doorMode=false;
+function setDoorMode(on){doorMode=on;if(on&&placeMode)setPlace(null);stage.style.cursor=on?'crosshair':'';if(on)say('Нажмите на перегородку там, где нужен дверной проём')}
+function addDoor(it,p){
+  select(it);
+  if(it.w<DOOR_MIN+2*jb(it)){say('Перегородка коротка для проёма: нужна длина от '+(DOOR_MIN+2*jb(it))/10+' см');return}
+  pushHist('дверной проём');if(!it.dr)it.dw=Math.min(DOOR_W,it.w-2*jb(it));
+  const ax=!!(it.rot&1),dir=it.rot===0||it.rot===3?1:-1;
+  it.dr=true;it.o=((ax?-p.z/M:p.x/M)-(ax?it.y:it.x))*dir;build(it);syncPanel();
+  say('Проём добавлен. Ширина и положение меняются ползунками, убрать: кнопка на панели');
+}
+$('bAddD').onclick=()=>{if(!sel||!sel.c.wall||sel.dr)return;const it=sel;   // проём с дверью посередине перегородки; дальше его можно сдвинуть ползунком
+  if(!doorsOn){doorsOn=true;$('td').setAttribute('aria-pressed','true');buildLeaves();items.forEach(i=>i.dr&&build(i))}
+  addDoor(it,new T.Vector3(it.x*M,0,-it.y*M))};
+$('bOpen').onclick=()=>{if(!sel||!sel.dr)return;const it=sel;   // если двери выключены, сначала показываем их
+  if(!doorsOn){doorsOn=true;$('td').setAttribute('aria-pressed','true');buildLeaves();items.forEach(i=>i.dr&&build(i))}
+  if(!it.dSt)build(it);toggleDoor(it.dSt);syncPanel()};
+$('bFlip').onclick=()=>{if(!sel||!sel.dr)return;const it=sel;if(!it.dSt)it.dSt={open:false};it.dSt.dir=-(it.dSt.dir||1);
+  if(!it.dSt.open){if(!doorsOn){doorsOn=true;$('td').setAttribute('aria-pressed','true');buildLeaves();items.forEach(i=>i.dr&&build(i))}it.dSt.open=true}swingDoor(it.dSt);syncPanel()};
+$('bDoor').onclick=()=>{if(sel&&sel.dr){pushHist('проём убран');sel.dr=false;build(sel);syncPanel()}};
+// исходные межкомнатные стены квартиры (по чертежу) — перегородки толщиной 80 мм: [x, y центра, поворот, длина, сдвиг проёма]
+// две стены у прихожей с готовыми проёмами 90 см, проём вплотную к соседней стене
+const ORIG=[[1795,3460,0,3590],[1795,6730,0,3590],[3630,3015,1,1430,265],[3630,5250,1,3040,1070],[4860,4910,0,580]];
+function addOrig(){
+  ORIG.forEach(([x,y,rot,w,o])=>{const it={c:PART,w,d:PART_T,h:H,rot,x:0,y:0,g:new T.Group(),mats:[],orig:true};
+    if(o!=null){it.dr=true;it.dw=DOOR_W;it.jb=0;it.o=o}
+    put(it,x,y);build(it);furn.add(it.g);items.push(it)});
+}
+function setDemo(on){   // «Снести стены»: убирает исходные стены (даже сдвинутые); повторное нажатие ставит их на место заново
+  pushHist(on?'снос стен':'возврат стен');if(drag){drag.ctl.enabled=true;drag=null}
+  items.filter(i=>i.orig).forEach(i=>{furn.remove(i.g);items.splice(items.indexOf(i),1)});
+  if(sel&&!items.includes(sel))select(null);
+  if(!on)addOrig();
+  $('demo').setAttribute('aria-pressed',on);
+  say(on?'Межкомнатные стены снесены. Санузлы, балкон и несущие стены остались':'Стены вернули на место. Каждую можно выбрать и двигать, как перегородку');
+}
+addOrig();
+// ======== готовые расстановки (вкладка «Настройки»): [id, x, y, поворот (0 лицом на юг, 1 на запад, 2 на север, 3 на восток), {w, d, tint}]
+// координаты проверены на плане: без пересечений, двери и проходы свободны
+const PRESETS=[
+ {n:'Семья с ребёнком',m:'Семья',s:'спальня, детская, кабинет, гостиная со столовой',it:[
+  ['bed_green',2700,8670,0],['nightstand',1350,9595,0],['nightstand',4050,9595,0],['wardrobe_oak',4855,7650,1],['rug_berber',2700,7560,0],
+  ['kidsbed',900,2925,3],['rug_round',1700,1500,0,{w:1500,d:1500}],['dresser',2600,335,2],['desk_pc',3285,1250,1,{w:1000,d:600}],['chair_walnut',2700,1250,3],
+  ['desk_pc',1800,6335,0],['chair_cognac',1800,5650,2],['bookcase',1500,3680,2],['armchair_green',430,4750,3],
+  ['shoecab',5150,4715,0],['rack',7210,4100,1],
+  ['table_oak',9700,1900,0],['chair_cognac',9300,2645,0],['chair_cognac',10100,2645,0],['chair_cognac',9300,1155,2],['chair_cognac',10100,1155,2],
+  ['sofa_teal',11600,3760,0],['coffee_oak',11600,2850,0],['rug_berber',11600,2850,0],['tv_fluted',11900,315,2],['armchair_cognac',12900,2750,1],
+  ['armchair_wood',14500,3250,3],['table_round',14500,2200,0,{w:600,d:600}]]},
+ {n:'Пара с кабинетом',m:'Пара',s:'спальня, гостевая, кабинет, гостиная с диваном и креслами',it:[
+  ['bed_panel',2600,8690,0],['nightstand',1280,9595,0],['nightstand',3920,9595,0],['wardrobe_mirror',4845,7900,1],['rug_green',2600,7540,0,{w:2400,d:1500}],
+  ['bed_single',1000,2330,0],['nightstand',1900,3215,0],['wardrobe_white',3285,1100,1],['rug_round',1600,900,0,{w:1200,d:1200}],
+  ['desk_pc',1800,6295,0,{w:1800,d:780}],['chair_walnut',1800,5615,2],['bookcase',1500,3680,2],['armchair_wood',480,4750,3],
+  ['shoecab',5150,4715,0],['rack',7210,4100,1],
+  ['table_cone',9800,1950,0],['chair_walnut',9800,2770,0],['chair_walnut',8975,1950,3],['chair_walnut',10625,1950,1],
+  ['sofa_classic',11700,3705,0],['coffee_oak',11700,2750,0],['rug_green',11700,2800,0,{w:2600,d:1800}],['tv_fluted',11900,315,2],
+  ['armchair_green',12950,2700,1],
+  ['armchair_cognac',14500,3250,3,{tint:0x6f9481}],['table_round',14500,2200,0,{w:600,d:600}]]},
+ {n:'Минимализм',m:'Минимализм',s:'мало мебели, светлые тона, много свободного места',it:[
+  ['bed_panel',2600,8690,0,{tint:0xf1eeea}],['nightstand',1280,9595,0],['nightstand',3920,9595,0],['wardrobe_white',4845,7900,1],
+  ['bed_single',1000,2330,0,{tint:0xe4dad3}],['dresser',2600,335,2],
+  ['desk_pc',1800,6335,0,{w:1200,d:650}],['chair_shell',1800,5700,2],['armchair_wood',480,4750,3],
+  ['shoecab',5150,4715,0],
+  ['table_cone',9800,1950,0],['chair_shell',9800,2760,0],['chair_shell',9800,1140,2],
+  ['sofa_3',11700,3700,0,{tint:0xe4dad3}],['table_round',11700,2650,0],['rug_round',11700,2650,0,{w:2000,d:2000}],['tv_fluted',11900,315,2]]}];
+$('presets').innerHTML=PRESETS.map((p,k)=>`<button class="pre" data-k="${k}" title="${p.n}"><b><span class="lf">${p.n}</span><span class="sh">${p.m}</span></b><small>${p.s}</small></button>`).join('');
+$('presets').onclick=e=>{const b=e.target.closest('.pre');if(b)loadPreset(+b.dataset.k)};
+function loadPreset(k){const P=PRESETS[k];pushHist('готовая расстановка');
+  if(placeMode)setPlace(null);if(doorMode)setDoorMode(false);if(drag){drag.ctl.enabled=true;drag=null}
+  items.forEach(i=>furn.remove(i.g));items.length=0;select(null);   // убираем всё, включая перегородки: расстановка рассчитана на квартиру по чертежу
+  addOrig();$('demo').setAttribute('aria-pressed','false');
+  let n=0;P.it.forEach(([id,x,y,rot,o])=>{o=o||{};const c=CATALOG.find(c=>c.id===id);if(!c)return;
+    const it={c,w:o.w||c.w,d:o.d||c.d,h:c.h,rot,x:0,y:0,g:new T.Group(),mats:[],tint:o.tint==null?null:o.tint};
+    const at=valid(it,x,y)?[x,y]:findSpot(it,x,y,800);if(!at)return;put(it,at[0],at[1]);build(it);furn.add(it.g);items.push(it);n++});
+  say('Расстановка «'+P.n+'»: '+n+' предметов. Всё можно двигать, менять размер и цвет')}
+$('clearAll').onclick=()=>{ // удаляет всю мебель сразу, без подтверждения; перегородки остаются
+  const gone=items.filter(i=>!i.c.wall);if(!gone.length){say('Мебели на плане нет');return}
+  pushHist('удаление всей мебели');if(drag){drag.ctl.enabled=true;drag=null}
+  gone.forEach(i=>{furn.remove(i.g);items.splice(items.indexOf(i),1)});
+  if(sel&&!items.includes(sel))select(null);
+  say('Удалено предметов мебели: '+gone.length);
+};
+document.querySelector('.tabs').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.t==='part'&&!$('floors').children.length)renderFloors();if(placeMode)setPlace(null);if(doorMode)setDoorMode(false);document.querySelector('aside').dataset.tab=b.dataset.t;document.querySelectorAll('.tabs button').forEach(x=>x.setAttribute('aria-pressed',x===b))};
+// от допустимой точки идём к цели шагами по 6 см (чтобы не проскочить сквозь стену) и останавливаемся вплотную у первого препятствия двоичным поиском
+function approach(it,x,y,tx,ty){
+  const dx=tx-x,dy=ty-y,L=Math.hypot(dx,dy);if(L<0.5)return[x,y];
+  const n=Math.ceil(L/60);let lo=0;
+  for(let i=1;i<=n;i++){const t=i/n;
+    if(valid(it,x+dx*t,y+dy*t))lo=t;
+    else{let hi=t;for(let k=0;k<8;k++){const m=(lo+hi)/2;valid(it,x+dx*m,y+dy*m)?lo=m:hi=m}break}}
+  return[x+dx*lo,y+dy*lo];
+}
+// попадание по предмету. В виде сверху перегородка — тонкая полоска, поэтому её можно взять и рядом: в пределах PICK_PX пикселей экрана
+const PICK_PX=22,PICK_NEAR=0.35;
+function pickLeaf(e){ // под пальцем дверь санузла (а не стена или мебель перед ней)? Дверь в перегородке открывается кнопкой в панели перегородки, нажатие на неё выбирает перегородку
+  setNdc(e);const h=ray.intersectObjects([walls,furn,leafG],true).find(x=>x.object.visible),st=h&&h.object.userData.leaf;return st&&st.fixed?st:null}
+function pickAt(e,wallOnly){
+  setNdc(e);const hs=ray.intersectObjects(furn.children,true),h=wallOnly?hs.find(x=>x.object.userData.it.c.wall):hs[0];
+  if(h&&(h.object.userData.it.c.wall||cur!==ocam))return{it:h.object.userData.it,point:h.point};
+  if(cur!==ocam)return null;
+  const p=new T.Vector3();if(!ray.ray.intersectPlane(new T.Plane(new T.Vector3(0,1,0),-H*M),p))return h?{it:h.object.userData.it,point:h.point}:null;
+  const px=p.x/M,py=-p.z/M,tol=PICK_PX*(ocam.right-ocam.left)/ocam.zoom/renderer.domElement.clientWidth/M;
+  let best=null,bd=Infinity;
+  const lim=h?tol*PICK_NEAR:tol;   // палец на мебели у стены: перегородку берём, только если попали почти в неё
+  items.forEach(o=>{if(!o.c.wall)return;const r=rect(o,o.x,o.y),d=Math.hypot(Math.max(r[0]-px,0,px-r[2]),Math.max(r[1]-py,0,py-r[3]));if(d<=lim&&d<bd){bd=d;best=o}});
+  if(best)return{it:best,point:p};
+  return h?{it:h.object.userData.it,point:h.point}:null;   // рядом нет перегородки — берём мебель под пальцем
+}
+const setNdc=e=>{const r=renderer.domElement.getBoundingClientRect();ndc.set((e.clientX-r.left)/r.width*2-1,-((e.clientY-r.top)/r.height*2-1));ray.setFromCamera(ndc,cur)};
+// сенсорный экран: переносить можно только уже выбранный предмет (касание выбирает), при втором пальце перенос отменяется и жест отдаётся камере. Мышь не меняется
+const touches=new Set();let tap=null,pt=null;
+stage.addEventListener('pointerdown',e=>{
+  if(e.target.closest('#selS,.vseg,#nav'))return;   // кнопки поверх окна 3D не трогают сцену
+  if(doorMode){if(e.button>0)return;const h=pickAt(e,true);
+    if(!h){say('Нажмите на перегородку там, где нужен дверной проём');return}
+    e.stopPropagation();setDoorMode(false);addDoor(h.it,h.point);return}   // камера в этот момент не вращается
+  const touch=e.pointerType==='touch';
+  if(touch){touches.add(e.pointerId);
+    if(touches.size>1){if(drag){drag.ctl.enabled=true;paint(drag.it,false);drag=null}tap=null;down=null;pt=null;return}}
+  if(drag||e.button>0)return;
+  if(placeMode){down=null;tap=null;pt={x:e.clientX,y:e.clientY};return}   // ставим по отпусканию, если палец или мышь почти не сдвинулись
+  if(doorsOn){const st=pickLeaf(e);if(st){leafTap={st,x:e.clientX,y:e.clientY};down=null;tap=null;return}}   // нажатие на дверь открывает или закрывает её; если потянуть — вращается вид
+  const h=pickAt(e,false);
+  if(!h){down={x:e.clientX,y:e.clientY};return}
+  const it=h.it;
+  if(touch&&it!==sel){const t={it,x:e.clientX,y:e.clientY,t:performance.now(),h,id:e.pointerId};tap=t;   // палец: выбор по короткому касанию или по удержанию SEL_HOLD_MS
+    t.tm=setTimeout(()=>{if(tap!==t||touches.size!==1||drag)return;tap=null;if(navigator.vibrate)navigator.vibrate(15);select(it);setNdc({clientX:t.x,clientY:t.y});startDrag(it,t.h,t.id);say('Выбрано: не отпуская, ведите палец, чтобы переместить')},SEL_HOLD_MS);return}
+  select(it);startDrag(it,h,e.pointerId);
+},true);
+function startDrag(it,h,id){ // предмет едет за пальцем или мышью по горизонтальной плоскости на высоте точки касания
+  const pl=new T.Plane(new T.Vector3(0,1,0),-h.point.y),p=new T.Vector3();
+  if(!ray.ray.intersectPlane(pl,p))return;
+  drag={it,pl,id,ox:it.x-p.x/M,oy:it.y+p.z/M,lx:it.x,ly:it.y,ctl:ac(),s0:snap()};
+  drag.ctl.enabled=false; // пока двигаем мебель, камера не вращается
+}
+const SEL_HOLD_MS=500,SEL_SLOP=8;   // удержание пальца на предмете полсекунды выбирает его; сдвиг больше SEL_SLOP пикселей — это вращение вида
+addEventListener('pointermove',e=>{if(tap&&tap.tm&&e.pointerId===tap.id&&Math.hypot(e.clientX-tap.x,e.clientY-tap.y)>SEL_SLOP){clearTimeout(tap.tm);tap.tm=0}});
+addEventListener('pointermove',e=>{
+  if(!drag||e.pointerId!==drag.id)return;
+  setNdc(e);const p=new T.Vector3();if(!ray.ray.intersectPlane(drag.pl,p))return;
+  const it=drag.it,nx=p.x/M+drag.ox,ny=-p.z/M+drag.oy,px=drag.lx,py=drag.ly;
+  const mag=(x,y)=>magnet(it,x,y);
+  if(valid(it,nx,ny)){const m=mag(nx,ny);drag.lx=m[0];drag.ly=m[1];put(it,m[0],m[1]);paint(it,false);return} // цель свободна: переносим сразу, в том числе в другую комнату (даже если мебель не проходит в проём)
+  const p1=approach(it,px,py,nx,ny); // прямо к курсору до касания препятствия
+  let a=approach(it,p1[0],p1[1],nx,p1[1]);a=approach(it,a[0],a[1],a[0],ny);   // затем скользим вдоль препятствия: сначала x, потом y
+  let b=approach(it,p1[0],p1[1],p1[0],ny);b=approach(it,b[0],b[1],nx,b[1]);   // или сначала y, потом x
+  const best=[p1,a,b].sort((u,v)=>Math.hypot(u[0]-nx,u[1]-ny)-Math.hypot(v[0]-nx,v[1]-ny))[0];
+  const bm=mag(best[0],best[1]);drag.lx=bm[0];drag.ly=bm[1];
+  put(it,bm[0],bm[1]);paint(it,Math.hypot(best[0]-px,best[1]-py)<0.5&&Math.hypot(nx-px,ny-py)>30);
+});
+const endPtr=e=>{
+  touches.delete(e.pointerId);
+  if(drag&&e.pointerId===drag.id){const di=drag.it,s0=drag.s0;drag.ctl.enabled=true;drag=null;if(di.c.wall){di.anc=0;closeGaps(di);build(di);syncPanel()}paint(di,false);if(!sameSnap(s0,snap()))pushHist('перемещение',s0);return}
+  if(pt&&e.type==='pointerup'&&touches.size===0&&Math.hypot(e.clientX-pt.x,e.clientY-pt.y)<8&&placeMode)placeAt(e);
+  pt=null;
+  if(leafTap&&e.type==='pointerup'&&touches.size===0&&Math.hypot(e.clientX-leafTap.x,e.clientY-leafTap.y)<8)toggleDoor(leafTap.st);
+  leafTap=null;
+  if(tap&&e.type==='pointerup'&&touches.size===0&&Math.hypot(e.clientX-tap.x,e.clientY-tap.y)<8&&performance.now()-tap.t<500){select(tap.it);say('Выбрано: потяните предмет, чтобы переместить')}
+  tap=null;
+  if(down&&e.type==='pointerup'&&Math.hypot(e.clientX-down.x,e.clientY-down.y)<6)select(null);
+  down=null;
+};
+addEventListener('pointerup',endPtr);addEventListener('pointercancel',endPtr);
+addEventListener('keydown',e=>{if(!sel||e.target.tagName==='INPUT')return;if('rRкК'.includes(e.key)&&e.key.length===1)rotateSel();if('qQйЙeEуУ'.includes(e.key)&&e.key.length===1&&sel&&!sel.c.wall){const s0=snap();if(setAngle(angOf(sel)+('qQйЙ'.includes(e.key)?-ANG_KEY:ANG_KEY)))pushHist('поворот',s0)}if(e.key==='Delete'||e.key==='Backspace')removeSel()});
+// снимок: рисуем текущий кадр (без подсветки выбора) с подписью внизу
+function snapshot(){
+  const s0=sel;sel=null;items.forEach(i=>paint(i,false));
+  renderer.render(scene,cur);
+  const src=renderer.domElement,w=src.width,h=src.height,bar=Math.round(h*0.08),c=document.createElement('canvas');
+  c.width=w;c.height=h+bar;const g=c.getContext('2d');
+  const gr=g.createRadialGradient(w/2,h*.4,0,w/2,h*.4,w*.75);gr.addColorStop(0,'#ffffff');gr.addColorStop(1,'#e3e8ee');
+  g.fillStyle=gr;g.fillRect(0,0,w,h);g.drawImage(src,0,0);
+  g.fillStyle='#ffffff';g.fillRect(0,h,w,bar);g.textBaseline='middle';
+  g.fillStyle='#c1272d';g.font='800 '+Math.round(bar*.42)+'px Montserrat,"Segoe UI",system-ui,sans-serif';g.textAlign='left';g.fillText('Планировщик мечты',bar*.4,h+bar/2);
+  g.fillStyle='#66727f';g.font=Math.round(bar*.34)+'px "Segoe UI",system-ui,sans-serif';g.textAlign='right';
+  g.fillText('4К · кв. №64 · '+new Date().toLocaleDateString('ru-RU'),w-bar*.4,h+bar/2);
+  sel=s0;items.forEach(i=>paint(i,false));
+  return c.toDataURL('image/png');
+}
+$('snap').onclick=()=>{const u=snapshot(),a=$('shotDl');$('shotImg').src=u;a.href=u;a.download='planirovka-'+new Date().toISOString().slice(0,10)+'.png';$('shot').hidden=false};
+$('shotX').onclick=()=>$('shot').hidden=true;
+// подсказки: карточки «картинка-жест + заголовок + текст»; текст и жест свои для мыши и для касаний
+const TOUCH=matchMedia('(pointer:coarse)').matches;
+const MS=(x,y,b)=>`<rect x="${x}" y="${y}" width="16" height="24" rx="8"/><path d="M${x+8} ${y}v9M${x} ${y+9}h16"/>`+   // мышь, подсвечена нажимаемая часть
+  ({l:`<rect class="hf" x="${x+2}" y="${y+2}" width="5" height="6" rx="2"/>`,r:`<rect class="hf" x="${x+9}" y="${y+2}" width="5" height="6" rx="2"/>`,w:`<rect class="fa" x="${x+6.5}" y="${y+2}" width="3" height="6" rx="1.5" stroke="none"/>`}[b]||'');
+const FD=(x,y)=>`<circle class="hf" cx="${x}" cy="${y}" r="7"/><circle cx="${x}" cy="${y}" r="11" opacity=".35"/>`;   // касание пальцем
+const CUR=(x,y)=>`<path class="fa" stroke="none" d="M${x} ${y}v14l4-3.5 3 6.5 3-1.5-3-6h5z"/>`;                   // курсор мыши
+const ROT='<path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 4v5h-5"/>',BIN='<path d="M4 7h16M10 11v6M14 11v6M6 7l1 12h10l1-12M9 7V4h6v3"/>';
+const HELP=[
+  ['Вращение','Зажмите левую кнопку мыши на пустом месте и ведите.','Ведите одним пальцем по пустому месту.',
+    '<path d="M36 26l12-7 12 7v14l-12 7-12-7zM36 26l12 7 12-7M48 33v14"/><path d="M18 40a30 13 0 0 0 60 0"/><path d="M73 44l5-5 5 5"/>'+(TOUCH?`<g class="a1">${FD(20,16)}</g>`:`<g class="a1">${MS(10,6,'l')}</g>`)],
+  ['Масштаб','Крутите колёсико мыши.','Сведите или разведите два пальца.',
+    '<circle cx="62" cy="28" r="13"/><path d="M71 37l10 10M56 28h12M62 22v12"/>'+(TOUCH?`<g class="a2">${FD(30,22)}</g><g class="a3">${FD(16,42)}</g>`:MS(14,20,'w')+'<path d="M36 24l4-4 4 4M36 40l4 4 4-4"/>')],
+  ['Сдвиг','Зажмите правую кнопку мыши и ведите.','Ведите двумя пальцами вместе.',
+    '<path d="M64 14v36M46 32h36M60 18l4-4 4 4M60 46l4 4 4-4M50 28l-4 4 4 4M78 28l4 4-4 4"/>'+(TOUCH?`<g class="a1">${FD(16,24)}${FD(28,40)}</g>`:MS(12,20,'r'))],
+  ['Добавить мебель','Выберите категорию справа, нажмите на карточку, затем на пол в нужном месте. Или зажмите карточку и перетащите её в квартиру.','Выберите категорию внизу, коснитесь карточки, затем пола в нужном месте. Или подержите карточку полсекунды и перетащите её в квартиру.',
+    '<rect x="6" y="10" width="30" height="40" rx="5" class="fl"/><path d="M11 20h20v4H11zM14 24v10M28 24v10M40 30h12M48 26l4 4-4 4"/><rect x="58" y="10" width="32" height="40" rx="3" class="gh"/><rect x="66" y="22" width="16" height="14" rx="2" class="fl a4"/>'+(TOUCH?FD(24,42):CUR(22,34))],
+  ['Перемещение','Потяните предмет мышью в нужное место. Красным он подсвечивается, если мешает стена или другая мебель.','Коснитесь предмета и тяните пальцем. Или подержите палец на нём полсекунды — он выберется, и его сразу можно вести. Красный цвет — мешает стена или мебель.',
+    '<rect x="10" y="18" width="24" height="18" rx="2" class="gh"/><path d="M14 50h66M76 46l4 4-4 4"/><g class="a5"><rect x="10" y="18" width="24" height="18" rx="2" class="fl"/>'+(TOUCH?FD(22,27):CUR(20,24))+'</g>'],
+  ['Размер, поворот, цвет','У выбранного предмета ползунки: ширина, глубина, у столов, шкафов и тумб — высота, «Поворот» — на любой угол (клавиши Q и E — по 15°). Кнопка поворачивает на 90° (клавиша R), корзина удаляет (Delete). Кружки меняют цвет, радужный — любой цвет.','Панель выбранного предмета открывается вместо нижнего меню. Ползунки: ширина, глубина, у столов, шкафов и тумб — высота, «Поворот» — на любой угол. Кнопки подписаны: «Повернуть на 90°», «Удалить». Кружки меняют цвет, радужный — любой. «Готово» возвращает меню.',
+    `<rect x="4" y="12" width="88" height="40" rx="6" class="fl"/><path d="M12 24h22" opacity=".5"/><path d="M12 40h34"/><g class="a1"><circle class="fa" cx="29" cy="40" r="4"/></g><g transform="translate(52,24) scale(.7)">${ROT}</g><g class="bad" transform="translate(72,24) scale(.7)">${BIN}</g>`],
+  ['Стены и перегородки','Вкладка «Ремонт». Межкомнатные стены — это перегородки: нажмите на стену, чтобы передвинуть её, изменить длину или удалить. «+ Перегородка» ставит новую глухую стену, у другой стены она притягивается вплотную. Несущие стены и санузлы не меняются.','Вкладка «Ремонт». Межкомнатные стены — это перегородки: коснитесь стены, чтобы передвинуть её, изменить длину или удалить. «+ Перегородка» ставит новую глухую стену, у другой стены она притягивается вплотную. Несущие стены и санузлы не меняются.',
+    '<path d="M10 8v46h76" stroke-width="5"/><path d="M64 12v8a6 6 0 0 0 12 0v-8M64 16h4M72 16h4"/><g class="a6"><rect class="fa" x="42" y="18" width="6" height="33.5" stroke="none"/></g>'],
+  ['Проём и двери','У выбранной стены: «Добавить дверь» делает проём посередине, ползунками — ширина проёма (70–100 см) и его место, «Убрать проём» — снова глухая стена. Двери включаются в «Настройках» («Двери в проёмах»). Открыть дверь — кнопка «Открыть дверь» у стены, «Другая сторона» меняет сторону открывания. Двери санузлов открываются нажатием на них.','У выбранной стены: «Добавить дверь» делает проём посередине, ползунками — ширина проёма (70–100 см) и его место, «Убрать проём» — снова глухая стена. Двери включаются в «Настройках» («Двери»). Открыть дверь — кнопка «Открыть дверь» у стены, «Другая сторона» меняет сторону открывания. Двери санузлов открываются касанием.',
+    '<path d="M6 50h26M60 50h30" stroke-width="4"/><path d="M32 50V16M60 50V16"/><path d="M32 16a28 28 0 0 1 28 28" stroke-dasharray="3 3" opacity=".6"/><g class="a6"><path class="fl" d="M32 16l22 12v22l-22-0z"/><circle class="fa" cx="49" cy="36" r="2"/></g>'],
+  ['Снос, сброс, пол','«Снести стены» убирает все межкомнатные стены (санузлы и несущие остаются), повторное нажатие возвращает их. «Сбросить ремонт» возвращает стены, проёмы и пол как в квартире изначально, мебель остаётся. Ниже выбирается пол.','«Снести стены» убирает все межкомнатные стены (санузлы и несущие остаются), повторное нажатие возвращает их. «Сбросить ремонт» возвращает стены, проёмы и пол как в квартире изначально, мебель остаётся. Ниже выбирается пол.',
+    '<path d="M8 50h22V24h10v26h48" stroke-width="4"/><path d="M30 24a10 10 0 0 1 10 0"/><g class="a6"><path d="M62 18l6 10-5 4 7 12" stroke-width="2.5"/></g>'],
+  ['Назад','Стрелка в шапке отменяет последнее действие: перемещение, поворот, цвет, удаление, снос стен, сброс ремонта и другие, до 50 шагов подряд (Ctrl+Z).','Стрелка в шапке отменяет последнее действие: перемещение, поворот, цвет, удаление, снос стен, сброс ремонта и другие, до 50 шагов подряд.',
+    '<g transform="translate(26,6) scale(2.2)" stroke-width="1.3"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></g>'],
+  ['3D/2D и настройки','Переключатель 3D/2D в правом верхнем углу окна: объёмный вид или план сверху. Вкладка «Настройки»: высота стен (низкие не загораживают мебель) и их прозрачность, названия комнат, двери в проёмах, готовые расстановки (заменяют текущую мебель).','Переключатель 3D/2D в правом верхнем углу окна: объёмный вид или план сверху. Вкладка «Настройки»: высота стен (низкие не загораживают мебель) и их прозрачность, названия комнат, двери, готовые расстановки (заменяют текущую мебель).',
+    '<path d="M10 22l14-8 14 8v16l-14 8-14-8zM10 22l14 8 14-8M24 30v16M42 32h10"/><rect x="56" y="14" width="30" height="32" rx="2"/><path d="M56 30h14v16"/>'],
+  ['Снимок и очистка','В шапке: фотоаппарат делает снимок планировки, корзина удаляет всю мебель (стены и перегородки остаются).','В шапке: фотоаппарат делает снимок планировки, корзина удаляет всю мебель (стены и перегородки остаются).',
+    `<g transform="translate(14,12) scale(1.6)" stroke-width="1.4"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></g><g class="bad" transform="translate(52,12) scale(1.6)" stroke-width="1.4">${BIN}</g>`]];
+$('tips').innerHTML=HELP.map(([t,pc,tc,svg])=>`<li class="tip"><svg viewBox="0 0 96 64" aria-hidden="true">${svg}</svg><div><b>${t}</b><span>${TOUCH?tc:pc}</span></div></li>`).join('');
+function closeHelp(){$('helpM').hidden=true}
+// при открытии: карточка «Как смотреть квартиру» с тремя анимированными жестами (те же картинки, что в шпаргалке)
+const NAV_MS=15000,NAV_TXT=TOUCH?['ведите одним пальцем','сведите или разведите два пальца','ведите двумя пальцами']:['зажмите левую кнопку мыши и ведите','крутите колёсико мыши','зажмите правую кнопку мыши и ведите'];
+$('nav').innerHTML=`<div class="navh"><b>Как смотреть квартиру</b><button id="navX">Понятно</button></div><div class="navt">${HELP.slice(0,3).map((h,i)=>`<div class="tip"><svg viewBox="0 0 96 64" aria-hidden="true">${h[3]}</svg><b>${h[0]}</b><span>${NAV_TXT[i]}</span></div>`).join('')}</div>`;
+function hideNav(){$('nav').hidden=true}
+$('nav').hidden=false;hintEl.style.display='none';$('navX').onclick=hideNav;setTimeout(hideNav,NAV_MS);
+stage.addEventListener('pointerdown',e=>{if(!e.target.closest('#nav'))hideNav();focusSaved=null});stage.addEventListener('wheel',hideNav,{passive:true});
+// при открытии сайта шпаргалка сама не открывается: вместо неё под кнопкой «?» на HINTQ_MS висит выноска, кнопка пульсирует
+const HINTQ_MS=12000;
+function placeHintQ(){const q=$('hintQ'),b=$('help').getBoundingClientRect(),cx=b.left+b.width/2,w=q.offsetWidth,l=Math.max(8,cx-w+26);
+  q.style.top=(b.bottom+12)+'px';q.style.left=l+'px';q.style.setProperty('--ax',(l+w-cx-7)+'px')}
+function hideHintQ(){$('hintQ').hidden=true;$('help').classList.remove('pulse')}
+// выноска следит за кнопкой каждый кадр, пока видна: после открытия догружаются шрифты и картинки, шапка сдвигается, и одной расстановки при запуске мало
+$('hintQ').hidden=false;$('help').classList.add('pulse');requestAnimationFrame(function f(){if($('hintQ').hidden)return;placeHintQ();requestAnimationFrame(f)});setTimeout(hideHintQ,HINTQ_MS);
+$('help').onclick=()=>{hideHintQ();$('helpM').hidden=false};$('helpX').onclick=closeHelp;
+$('helpM').onclick=e=>{if(e.target.id==='helpM')closeHelp()};
+$('shot').onclick=e=>{if(e.target.id==='shot')$('shot').hidden=true};
+$('undo').onclick=undo;
+addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&(e.key==='z'||e.key==='я'||e.code==='KeyZ')&&e.target.tagName!=='INPUT'){e.preventDefault();undo();return}if(e.key==='Escape'){$('shot').hidden=true;closeHelp();if(doorMode)setDoorMode(false);if(placeMode)setPlace(null)}});
+const LO=new T.Vector3(-1,0,-10.6),HI=new T.Vector3(16.5,1,0.6),dl=new T.Vector3();
+function keepIn(ctl,cam){if(focusSaved)return;dl.copy(ctl.target).clamp(LO,HI).sub(ctl.target);if(dl.lengthSq()>0){ctl.target.add(dl);cam.position.add(dl)}} // не даём утащить квартиру за пределы экрана
+(function loop(now){requestAnimationFrame(loop);if(anim&&!anim(now))anim=null;stepDoors(now);const ct=cur===ocam?oc:controls;ct.update();keepIn(ct,cur);renderer.render(scene,cur)})(performance.now());
+</script></body></html>
